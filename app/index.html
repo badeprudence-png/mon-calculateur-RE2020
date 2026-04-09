@@ -120,14 +120,41 @@
     }
     .badge.gris { background: #eaecee; color: var(--discret); }
 
-    /* === Bouton calcul === */
-    .btn-wrap { text-align: center; margin: 16px 0 4px; }
+    /* === Boutons calcul / RAZ / Imprimer === */
+    .btn-wrap { text-align: center; margin: 16px 0 4px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .btn-calc {
       padding: 11px 44px; background: var(--bleu); color: #fff;
       border: none; border-radius: 4px; font: 600 14px inherit;
       cursor: pointer; letter-spacing: .3px; transition: background .15s;
     }
     .btn-calc:hover { background: #154360; }
+    .btn-raz {
+      padding: 11px 24px; background: #fff; color: var(--discret);
+      border: 1px solid var(--bordure); border-radius: 4px; font: 600 14px inherit;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-raz:hover { background: #f0f2f5; color: var(--texte); }
+    .btn-impr {
+      padding: 7px 18px; background: #fff; color: var(--bleu-vif);
+      border: 1px solid var(--bleu-vif); border-radius: 4px; font: 600 13px inherit;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-impr:hover { background: #eaf4fb; }
+
+    /* === Impression === */
+    @media print {
+      body { background: #fff; font-size: 12px; }
+      header, footer, .section-saisie, .btn-wrap, .bloc-err,
+      .debug-lbl, #debug-json, .btn-impr { display: none !important; }
+      #zone-res { display: block !important; }
+      .res-entete { border-bottom: 2px solid #1a5276; margin-bottom: 12px; }
+      .grille { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .carte { break-inside: avoid; border: 1px solid #d5d8dc; padding: 10px; }
+      .c-mods { display: block !important; font-size: 10px; }
+      #recapitulatif-params { display: block !important; margin-bottom: 16px;
+        border: 1px solid #d5d8dc; padding: 10px; border-radius: 4px; font-size: 11px; }
+    }
+    #recapitulatif-params { display: none; }
 
     /* === Bloc erreurs validation === */
     .bloc-err {
@@ -588,9 +615,10 @@
     <ul id="liste-err"></ul>
   </div>
 
-  <!-- Bouton calcul -->
+  <!-- Boutons calcul + RAZ -->
   <div class="btn-wrap">
     <button class="btn-calc" id="btn-calculer">Calculer les seuils RE2020</button>
+    <button class="btn-raz"  id="btn-raz">Remettre à zéro</button>
   </div>
 
   <!-- ══════════════════════════════════════════════════════
@@ -603,8 +631,12 @@
       <div class="badges-periodes">
         <span id="badge-icc" class="badge"></span>
         <span id="badge-ice" class="badge gris" style="display:none"></span>
+        <button class="btn-impr" id="btn-imprimer" title="Imprimer les résultats">🖨 Imprimer</button>
       </div>
     </div>
+
+    <!-- Récapitulatif paramètres — affiché uniquement à l'impression -->
+    <div id="recapitulatif-params"></div>
 
     <!-- Toggle mode debug -->
     <label class="debug-lbl">
@@ -1732,6 +1764,104 @@ document.getElementById('wz-appliquer').addEventListener('click', function() {
   document.getElementById('categorie').value = cat;
   mettreAJourContrainteCategorie();
   document.getElementById('wizard-cat').open = false;
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTON RAZ — Remise à zéro du formulaire et des résultats
+   ═══════════════════════════════════════════════════════════════════════════ */
+document.getElementById('btn-raz').addEventListener('click', function() {
+  /* Réinitialisation des champs de saisie */
+  document.getElementById('annee-pc').value  = '';
+  document.getElementById('usage').value     = '';
+  document.getElementById('zone').value      = '';
+  document.getElementById('altitude').value  = 'inf400';
+  document.getElementById('sref').value      = '';
+  document.getElementById('nl').value        = '';
+  document.getElementById('hsp').value       = '';
+  document.getElementById('sagt').value      = '';
+  document.getElementById('ic-lot1').value   = '';
+  document.getElementById('ic-lot2').value   = '';
+  document.getElementById('ic-lot13').value  = '';
+  document.getElementById('ic-ded').value    = '';
+  document.getElementById('bruit').checked      = false;
+  document.getElementById('climatise').checked  = false;
+  document.getElementById('rcu').checked        = false;
+  document.getElementById('igh').checked        = false;
+  document.getElementById('categorie').value    = 'cat1';
+  const cbMai = document.getElementById('apres-mai-2026');
+  const cbJui = document.getElementById('apres-juillet-2026');
+  cbMai.checked = false; cbMai.disabled = false;
+  cbJui.checked = false;
+
+  /* Masquer les zones résultats et erreurs */
+  document.getElementById('zone-res').style.display  = 'none';
+  document.getElementById('bloc-err').style.display  = 'none';
+  document.getElementById('badge-annee').style.display = 'none';
+
+  /* Déclencher les mises à jour visuelles */
+  document.getElementById('usage').dispatchEvent(new Event('change'));
+  document.getElementById('climatise').dispatchEvent(new Event('change'));
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTON IMPRIMER — Récapitulatif paramètres + résultats
+   ═══════════════════════════════════════════════════════════════════════════ */
+document.getElementById('btn-imprimer').addEventListener('click', function() {
+  /* Lecture des paramètres actuels du formulaire */
+  const anneePC  = document.getElementById('annee-pc').value  || '—';
+  const usageVal = parseInt(document.getElementById('usage').value) || 0;
+  const usageLbl = usageVal ? (USAGES[usageVal] ? USAGES[usageVal].libelle : usageVal) : '—';
+  const zone     = document.getElementById('zone').value      || '—';
+  const altitude = document.getElementById('altitude').value  || '—';
+  const sref     = document.getElementById('sref').value      || '—';
+  const nl       = document.getElementById('nl').value;
+  const hsp      = document.getElementById('hsp').value;
+  const sagt     = document.getElementById('sagt').value;
+  const bruit    = document.getElementById('bruit').checked   ? 'BR2/BR3' : 'BR1';
+  const categorie= document.getElementById('categorie').value || '—';
+  const climatise= document.getElementById('climatise').checked ? 'Oui' : 'Non';
+  const rcu      = document.getElementById('rcu').checked     ? 'Oui' : 'Non';
+  const igh      = document.getElementById('igh').checked     ? 'Oui' : 'Non';
+  const lot1     = document.getElementById('ic-lot1').value;
+  const lot2     = document.getElementById('ic-lot2').value;
+  const lot13    = document.getElementById('ic-lot13').value;
+  const ded      = document.getElementById('ic-ded').value;
+  const decret   = document.getElementById('apres-juillet-2026').checked ? 'Oui (Décret 2026-200)' : 'Non';
+
+  /* Construction du tableau récapitulatif */
+  const lignes = [
+    ['Année du PC', anneePC],
+    ['Usage', usageVal ? usageVal + ' — ' + usageLbl : '—'],
+    ['Zone climatique', zone],
+    ['Altitude', altitude],
+    ['Surface de référence (Sref)', sref + ' m²'],
+  ];
+  if (nl)   lignes.push(['Nombre de logements', nl]);
+  if (hsp && parseFloat(hsp) > 0) lignes.push(['HSP moy.', hsp + ' m']);
+  lignes.push(
+    ['Catégorie', { cat1: 'Cat. 1', cat2: 'Cat. 2', cat3: 'Cat. 3' }[categorie] || categorie],
+    ['Climatisé', climatise],
+    ['Exposition bruit', bruit],
+    ['Raccordé RCU', rcu],
+    ['IGH', igh],
+  );
+  if (sagt && parseFloat(sagt) > 0) lignes.push(['Surface agrément ext.', sagt + ' m²']);
+  if (lot1 && parseFloat(lot1) > 0) lignes.push(['Icconstruction lot 1 déd.', lot1 + ' kgCO₂/m²']);
+  if (lot2 && parseFloat(lot2) > 0) lignes.push(['Icconstruction lot 2 déd.', lot2 + ' kgCO₂/m²']);
+  if (lot13 && parseFloat(lot13) > 0) lignes.push(['Icconstruction lots 1+3 déd.', lot13 + ' kgCO₂/m²']);
+  if (ded && parseFloat(ded) > 0)  lignes.push(['Mided (déductions)', ded + ' kgCO₂/m²']);
+  lignes.push(['Décret 2026-200 applicable', decret]);
+
+  const rows = lignes.map(function(l) {
+    return '<tr><td style="padding:2px 8px 2px 0;color:#5d6d7e;white-space:nowrap">' + l[0]
+         + '</td><td style="padding:2px 0 2px 8px;font-weight:600">' + l[1] + '</td></tr>';
+  }).join('');
+
+  document.getElementById('recapitulatif-params').innerHTML =
+    '<strong style="display:block;margin-bottom:6px;color:#1a5276">Paramètres d\'entrée</strong>'
+    + '<table style="border-collapse:collapse;font-size:11px">' + rows + '</table>';
+
+  window.print();
 });
 </script>
 
