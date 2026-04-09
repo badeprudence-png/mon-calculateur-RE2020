@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find '/d/Claude-Projets/Projet A' -name .* -type f)",
+      "Bash(pdftotext \"/d/Claude-Projets/Projet A/specs/chapitre1a3_annexe_r172-4_post-gtm2.pdf\" -)",
+      "Bash(iconv -f latin1 -t utf8)",
+      "Bash(pdftotext \"/d/Claude-Projets/Projet A/specs/chapitre1a3_annexe_r172-4_post-gtm2.pdf\" -enc UTF-8 -)",
+      "Bash(pdftotext -enc UTF-8 \"/d/Claude-Projets/Projet A/specs/chapitre1a3_annexe_r172-4_post-gtm2.pdf\" \"/tmp/re2020.txt\")",
+      "Bash(pdftotext -enc UTF-8 \"/d/Claude-Projets/Projet A/specs/chapitre1a3_annexe_r172-4_post-gtm2.pdf\" \"/d/Claude-Projets/Projet A/specs/re2020.txt\")",
+      "Bash(node:*)",
+      "Bash(python3 -c \" import json with open\\(r'C:\\\\Users\\\\badep\\\\.claude\\\\projects\\\\D--Claude-Projets-Projet-A\\\\44487bd8-9ce5-4092-9b99-9d421d1c8db0.jsonl', 'r', encoding='utf-8'\\) as f: for line in f: try: obj = json.loads\\(line\\) msg = str\\(obj\\) if 'testSuite' in msg or \\('CAS' in msg and 'attendu' in msg\\) or \\('Bbiomax' in msg and 'attendu' in msg\\): print\\(msg[:500]\\) print\\('---'\\) except: pass \")",
+      "Bash(python3:*)",
+      "Bash(wc:*)",
+      "Bash(start:*)",
+      "Bash(xxd)",
+      "Bash(powershell:*)",
+      "Bash(mkdir -p \"D:/Claude-Projets/Projet A/engine\" \"D:/Claude-Projets/Projet A/netlify/functions\")",
+      "Bash(cp \"D:/Claude-Projets/Projet A/app/re2020-data.js\" \"D:/Claude-Projets/Projet A/engine/re2020-data.js\")",
+      "Bash(cp \"D:/Claude-Projets/Projet A/app/re2020-engine.js\" \"D:/Claude-Projets/Projet A/engine/re2020-engine.js\")"
+    ]
+  }
+}

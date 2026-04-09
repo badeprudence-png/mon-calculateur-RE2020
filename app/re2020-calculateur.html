@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculateur RE2020 — Seuils réglementaires</title>
+  <style>
+    /* === Variables CSS === */
+    :root {
+      --bleu:     #1a5276;
+      --bleu-vif: #2e86c1;
+      --fond:     #f0f2f5;
+      --carte:    #ffffff;
+      --texte:    #2c3e50;
+      --discret:  #5d6d7e;
+      --bordure:  #d5d8dc;
+      --ombre:    0 1px 3px rgba(0,0,0,.09);
+      --danger:   #c0392b;
+      --avert:    #d35400;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font: 14px/1.5 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--fond);
+      color: var(--texte);
+    }
+
+    /* === En-tête === */
+    .entete {
+      background: var(--bleu);
+      padding: 16px 24px;
+      border-bottom: 3px solid #154360;
+    }
+    .entete h1 { color: #fff; font-size: 19px; font-weight: 600; }
+    .entete p  { color: rgba(255,255,255,.75); font-size: 12px; margin-top: 2px; }
+
+    /* === Conteneur principal === */
+    .conteneur { max-width: 860px; margin: 0 auto; padding: 18px 14px 52px; }
+
+    /* === Sections collapsibles (<details>) === */
+    details {
+      background: var(--carte);
+      border: 1px solid var(--bordure);
+      border-radius: 4px;
+      margin-bottom: 10px;
+      box-shadow: var(--ombre);
+    }
+    details[open] > summary { border-bottom: 1px solid var(--bordure); }
+    summary {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; cursor: pointer; user-select: none;
+      list-style: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    .chevron {
+      margin-left: auto; color: var(--discret); font-size: 11px;
+      transition: transform .15s;
+    }
+    details[open] .chevron { transform: rotate(180deg); }
+
+    .num-sec {
+      width: 21px; height: 21px; border-radius: 50%;
+      background: var(--bleu); color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    summary h2 { font-size: 13px; font-weight: 600; color: var(--bleu); }
+
+    /* === Corps de section (grille 2 colonnes) === */
+    .corps {
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 20px;
+    }
+    .span2 { grid-column: 1 / -1; }
+
+    /* === Champ générique === */
+    .champ { display: flex; flex-direction: column; gap: 3px; }
+
+    label.lib {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--discret);
+    }
+    .req { color: var(--danger); }
+
+    input[type=text],
+    input[type=number],
+    select {
+      width: 100%; padding: 7px 9px;
+      border: 1px solid var(--bordure); border-radius: 3px;
+      font: 13px/1.4 inherit; color: var(--texte); background: #fff;
+      transition: border-color .12s;
+    }
+    input:focus, select:focus {
+      outline: none; border-color: var(--bleu-vif);
+      box-shadow: 0 0 0 2px rgba(46,134,193,.15);
+    }
+
+    /* Case à cocher */
+    .cb {
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 0; cursor: pointer;
+    }
+    .cb input { accent-color: var(--bleu); cursor: pointer; width: 14px; height: 14px; }
+    .cb span  { font-size: 13px; cursor: pointer; }
+
+    /* Texte d'aide sous champ */
+    .aide { font-size: 11px; color: var(--discret); margin-top: 1px; }
+    .aide.avert { color: var(--avert); }
+
+    /* Badge période */
+    .badge {
+      display: inline-block; padding: 2px 9px;
+      background: #d6eaf8; color: var(--bleu);
+      border-radius: 10px; font-size: 11px; font-weight: 600;
+      margin-top: 4px;
+    }
+    .badge.gris { background: #eaecee; color: var(--discret); }
+
+    /* === Bouton calcul === */
+    .btn-wrap { text-align: center; margin: 16px 0 4px; }
+    .btn-calc {
+      padding: 11px 44px; background: var(--bleu); color: #fff;
+      border: none; border-radius: 4px; font: 600 14px inherit;
+      cursor: pointer; letter-spacing: .3px; transition: background .15s;
+    }
+    .btn-calc:hover { background: #154360; }
+
+    /* === Bloc erreurs validation === */
+    .bloc-err {
+      background: #fdedec; border: 1px solid #f5b7b1;
+      border-radius: 4px; padding: 10px 14px; margin-bottom: 12px;
+      font-size: 12px; color: var(--danger);
+    }
+    .bloc-err ul { margin-top: 4px; padding-left: 16px; }
+
+    /* === Zone résultats === */
+    .res-entete {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+    }
+    .res-titre { font-size: 14px; font-weight: 600; color: var(--bleu); }
+    .badges-periodes { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* Grille 3 × 2 cartes */
+    .grille {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-bottom: 12px;
+    }
+
+    .carte {
+      background: var(--carte); border: 1px solid var(--bordure);
+      border-top: 3px solid var(--bleu); border-radius: 4px;
+      padding: 12px 13px; box-shadow: var(--ombre);
+    }
+    .carte.na  { border-top-color: #aab7b8; }
+    .carte.err { border-top-color: var(--danger); }
+
+    .c-lib {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--discret); margin-bottom: 4px;
+    }
+    .c-val {
+      font-size: 23px; font-weight: 700; color: var(--bleu); line-height: 1.2;
+    }
+    .c-val.na { font-size: 13px; color: var(--discret); font-weight: 400; }
+    .c-unite  { font-size: 10px; color: var(--discret); margin-top: 1px; }
+
+    /* Label descriptif au-dessus du nom de l'indicateur */
+    .c-desc {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--bleu-vif); margin-bottom: 5px;
+    }
+
+    /* Zone formule / coefficients */
+    .c-mods {
+      margin-top: 8px; padding-top: 8px;
+      border-top: 1px solid var(--bordure);
+      font-size: 10px; color: var(--discret);
+    }
+
+    /* Ligne d'expression compacte : base × (1 + Σmod) */
+    .cf-expr {
+      font: 10px/1.4 'Consolas', monospace;
+      color: var(--discret); margin-bottom: 5px;
+      word-break: break-all;
+    }
+
+    /* Grille de termes étiquetés */
+    .cf-grille { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+    .cf-term   { display: flex; flex-direction: column; align-items: center; min-width: 30px; }
+    .cf-lbl    { font-size: 8px; color: var(--discret); text-align: center; white-space: nowrap; }
+    .cf-val    { font-size: 10px; font-weight: 600; color: var(--texte); }
+    .cf-val.actif { color: var(--bleu-vif); }
+
+    /* Séparateur entre parties multiplicative et additive (Icconstruction) */
+    .cf-sep {
+      width: 100%; height: 1px; background: var(--bordure); margin: 4px 0;
+      font-size: 8px; color: var(--discret); text-align: left; padding-top: 1px;
+    }
+    .cf-note { font-size: 9px; color: var(--discret); font-style: italic; margin-top: 4px; }
+
+    /* === Debug === */
+    .debug-lbl {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--discret); cursor: pointer;
+      margin-bottom: 8px;
+    }
+    pre.debug {
+      background: #1a2332; color: #a8c8e8;
+      border-radius: 4px; padding: 12px 14px;
+      font: 11px/1.5 'Consolas', monospace;
+      overflow-x: auto; white-space: pre-wrap; margin-bottom: 10px;
+    }
+
+    /* === Wizard catégorie CE === */
+    .wizard-cat {
+      grid-column: 1 / -1;
+      background: #f0f7ff;
+      border: 1px solid #aed6f1;
+      border-radius: 4px;
+      margin-top: -4px;
+    }
+    .wizard-cat > summary {
+      padding: 7px 12px;
+      font-size: 11px; font-weight: 600; color: var(--bleu-vif);
+      cursor: pointer; user-select: none; list-style: none;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .wizard-cat > summary::-webkit-details-marker { display: none; }
+    .wizard-cat[open] > summary { border-bottom: 1px solid #aed6f1; }
+    .corps-wizard {
+      padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .wz-etape { display: flex; flex-direction: column; gap: 4px; }
+    .wizard-q {
+      font-size: 12px; font-weight: 600; color: var(--texte);
+    }
+    .wizard-radios { display: flex; gap: 14px; }
+    .wizard-radios label {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12px; cursor: pointer;
+    }
+    .wizard-radios input { accent-color: var(--bleu-vif); cursor: pointer; }
+    .wz-result {
+      border-radius: 3px; padding: 7px 10px;
+      font-size: 12px; font-weight: 600; display: none;
+    }
+    .wz-result.cat1 { background: #d5e8d4; border: 1px solid #82b366; color: #3d6b36; }
+    .wz-result.cat2 { background: #fff2cc; border: 1px solid #d6b656; color: #7a5c00; }
+    .wz-result.cat3 { background: #f8cecc; border: 1px solid #b85450; color: #7a2020; }
+    .wz-btn {
+      padding: 5px 14px; background: var(--bleu-vif); color: #fff;
+      border: none; border-radius: 3px; font: 600 11px inherit;
+      cursor: pointer; display: none; align-self: flex-start;
+      margin-top: 2px;
+    }
+    .wz-btn:hover { background: var(--bleu); }
+
+    /* === Pied de page === */
+    footer {
+      font-size: 11px; color: var(--discret); text-align: center;
+      border-top: 1px solid var(--bordure);
+      padding-top: 14px; margin-top: 20px; line-height: 1.6;
+    }
+
+    /* === Responsive === */
+    @media (max-width: 620px) {
+      .corps { grid-template-columns: 1fr; }
+      .grille { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 400px) {
+      .grille { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="entete">
+  <h1>Calculateur RE2020</h1>
+  <p>Seuils réglementaires — Annexe à l'article R.172-4</p>
+</header>
+
+<div class="conteneur">
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 1 — Projet
+  ══════════════════════════════════════════════════════ -->
+  <details open>
+    <summary>
+      <span class="num-sec">1</span>
+      <h2>Projet</h2>
+      <span class="chevron">▾</span>
+    </summary>
+    <div class="corps">
+
+      <div class="champ span2">
+        <label class="lib" for="nom-projet">Nom du projet</label>
+        <input type="text" id="nom-projet" placeholder="ex. Résidence Les Acacias — Bât. A">
+      </div>
+
+      <div class="champ">
+        <label class="lib" for="annee-pc">Année du permis de construire <span class="req">*</span></label>
+        <input type="number" id="annee-pc" min="2022" max="2040" placeholder="2026">
+        <span id="badge-annee" class="badge" style="display:none"></span>
+      </div>
+
+      <!-- Toggle visible uniquement pour anneePC = 2026 — usages 6-28 (Décret n°2026-16) -->
+      <div class="champ" id="groupe-apres-mai-2026" style="display:none">
+        <label class="lib">Décret n°2026-16 du 15/01/2026</label>
+        <label class="cb" style="margin-top:4px">
+          <input type="checkbox" id="apres-mai-2026">
+          <span>PC déposé à partir du <strong>01/05/2026</strong> (usages 6 à 28 soumis RE2020)</span>
+        </label>
+        <span class="aide">Applicables aux permis déposés à compter du 1<sup>er</sup> mai 2026</span>
+      </div>
+
+      <!-- Toggle visible uniquement pour anneePC = 2026 — Décret n°2026-200 -->
+      <div class="champ" id="groupe-apres-juillet-2026" style="display:none">
+        <label class="lib">Décret n°2026-200 du 18/03/2026</label>
+        <label class="cb" style="margin-top:4px">
+          <input type="checkbox" id="apres-juillet-2026">
+          <span>PC déposé à partir du <strong>01/07/2026</strong> (nouvelles règles Ic, HSP, agrément)</span>
+        </label>
+        <span class="aide">Applicables aux permis déposés à compter du 1<sup>er</sup> juillet 2026 — implique automatiquement le 01/05/2026</span>
+      </div>
+
+      <div class="champ">
+        <label class="lib">Réseau de chaleur urbain classé (RCU)</label>
+        <label class="cb" style="margin-top:4px">
+          <input type="checkbox" id="rcu">
+          <span>Raccordé à un réseau de chaleur classé</span>
+        </label>
+      </div>
+
+    </div>
+  </details>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 2 — Localisation
+  ══════════════════════════════════════════════════════ -->
+  <details open>
+    <summary>
+      <span class="num-sec">2</span>
+      <h2>Localisation</h2>
+      <span class="chevron">▾</span>
+    </summary>
+    <div class="corps">
+
+      <div class="champ">
+        <label class="lib" for="departement">Département <span class="req">*</span></label>
+        <select id="departement">
+          <option value="">— Choisir un département —</option>
+          <!-- Peuplé par JS depuis DEPTS -->
+        </select>
+      </div>
+
+      <div class="champ">
+        <label class="lib" for="zone">Zone climatique <span class="req">*</span></label>
+        <select id="zone">
+          <option value="">— Choisir —</option>
+          <option value="H1a">H1a</option>
+          <option value="H1b">H1b</option>
+          <option value="H1c">H1c</option>
+          <option value="H2a">H2a</option>
+          <option value="H2b">H2b</option>
+          <option value="H2c">H2c</option>
+          <option value="H2d">H2d</option>
+          <option value="H3">H3</option>
+        </select>
+        <span id="zone-source" class="aide" style="display:none">Déduite du département</span>
+      </div>
+
+      <div class="champ">
+        <label class="lib" for="altitude">Altitude <span class="req">*</span></label>
+        <select id="altitude">
+          <option value="inf400">&lt; 400 m</option>
+          <option value="400a800">400 – 800 m</option>
+          <option value="sup800">&gt; 800 m</option>
+        </select>
+      </div>
+
+    </div>
+  </details>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 3 — Bâtiment
+  ══════════════════════════════════════════════════════ -->
+  <details open>
+    <summary>
+      <span class="num-sec">3</span>
+      <h2>Bâtiment</h2>
+      <span class="chevron">▾</span>
+    </summary>
+    <div class="corps">
+
+      <div class="champ span2">
+        <label class="lib" for="usage">Usage <span class="req">*</span></label>
+        <select id="usage">
+          <option value="">— Choisir un usage —</option>
+          <!-- Peuplé par JS depuis USAGES (re2020-data.js) -->
+        </select>
+        <span id="avert-usage" class="aide avert" style="display:none"></span>
+      </div>
+
+      <div class="champ">
+        <label class="lib" for="sref">Surface de référence Sref (m²) <span class="req">*</span></label>
+        <input type="number" id="sref" min="1" step="0.1" placeholder="ex. 1500">
+      </div>
+
+      <!-- NL visible uniquement pour les usages 1 et 2 -->
+      <div class="champ" id="groupe-nl" style="display:none">
+        <label class="lib" for="nl">Nombre de logements (NL)</label>
+        <input type="number" id="nl" min="1" step="1" placeholder="ex. 20">
+        <span id="smoylgt-info" class="aide"></span>
+      </div>
+
+    </div>
+  </details>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 4 — Caractéristiques
+  ══════════════════════════════════════════════════════ -->
+  <details open>
+    <summary>
+      <span class="num-sec">4</span>
+      <h2>Caractéristiques</h2>
+      <span class="chevron">▾</span>
+    </summary>
+    <div class="corps">
+
+      <div class="champ">
+        <label class="lib" for="categorie">Catégorie de contraintes extérieures <span class="req">*</span></label>
+        <select id="categorie">
+          <option value="cat1">Cat. 1 — Usage courant</option>
+          <option value="cat2" id="opt-cat2">Cat. 2 — Contraintes particulières</option>
+          <option value="cat3" id="opt-cat3">Cat. 3 — Très fortes contraintes</option>
+        </select>
+        <span id="aide-cat-clim" class="aide avert" style="display:none">
+          Sans climatisation, seule la catégorie 1 est possible (Chap. V — Catégorie CE d'un local)
+        </span>
+      </div>
+
+      <!-- Wizard aide à la détermination de la catégorie CE -->
+      <details class="wizard-cat span2" id="wizard-cat">
+        <summary>▸ Je ne connais pas la catégorie — aide à la détermination</summary>
+        <div class="corps-wizard">
+
+          <div class="wz-etape" id="wz-q1">
+            <div class="wizard-q">1. Le bâtiment est-il climatisé ?</div>
+            <div class="wizard-radios">
+              <label><input type="radio" name="wz-clim" value="oui"> Oui</label>
+              <label><input type="radio" name="wz-clim" value="non"> Non</label>
+            </div>
+          </div>
+
+          <div class="wz-etape" id="wz-q2" style="display:none">
+            <div class="wizard-q">2. L'usage est-il l'un des suivants : bureaux, hôtels, restaurants, commerces, établissements d'accueil de la petite enfance, bâtiments universitaires / médiathèques, établissements de santé (partie jour) ?</div>
+            <div class="aide" style="margin-bottom:4px">Ces usages sont éligibles à la catégorie CE3 (Décret n°2026-16, Chap. V)</div>
+            <div class="wizard-radios">
+              <label><input type="radio" name="wz-bureaux" value="oui"> Oui</label>
+              <label><input type="radio" name="wz-bureaux" value="non"> Non</label>
+            </div>
+          </div>
+
+          <div class="wz-etape" id="wz-q3-igh" style="display:none">
+            <div class="wizard-q">3. Les règles d'hygiène/sécurité interdisent-elles l'ouverture de toutes les baies vers l'extérieur, ou le bâtiment est-il un IGH (art. R.146-3 CCH) ?</div>
+            <div class="aide" style="margin-bottom:4px" id="wz-note-igh">
+              Attention : pour les établissements de santé (partie jour), seule la condition "baies non ouvrantes" permet CE3 — l'IGH est exclu (Décret n°2026-16).
+            </div>
+            <div class="wizard-radios">
+              <label><input type="radio" name="wz-igh" value="oui"> Oui</label>
+              <label><input type="radio" name="wz-igh" value="non"> Non</label>
+            </div>
+          </div>
+
+          <div class="wz-etape" id="wz-q3-bruit" style="display:none">
+            <div class="wizard-q">3. Les baies du local sont-elles exposées au bruit BR2 ou BR3 ?</div>
+            <div class="wizard-radios">
+              <label><input type="radio" name="wz-bruit" value="oui"> Oui</label>
+              <label><input type="radio" name="wz-bruit" value="non"> Non</label>
+            </div>
+          </div>
+
+          <div class="wz-etape" id="wz-q4" style="display:none">
+            <div class="wizard-q">4. Le bâtiment est-il en zone climatique H2d ou H3, à une altitude &lt; 400 m ?</div>
+            <div class="wizard-radios">
+              <label><input type="radio" name="wz-zone-chaude" value="oui"> Oui</label>
+              <label><input type="radio" name="wz-zone-chaude" value="non"> Non</label>
+            </div>
+          </div>
+
+          <div class="wz-result" id="wz-result"></div>
+          <button class="wz-btn" id="wz-appliquer" type="button">Appliquer cette catégorie</button>
+
+        </div>
+      </details>
+
+      <div class="champ" id="groupe-bruit">
+        <label class="lib">Exposition acoustique</label>
+        <label class="cb" style="margin-top:4px">
+          <input type="checkbox" id="bruit">
+          <span>Exposition BR2 ou BR3 (zones de bruit)</span>
+        </label>
+      </div>
+
+      <div class="champ" id="groupe-climatise">
+        <label class="lib">Climatisation</label>
+        <label class="cb" style="margin-top:4px">
+          <input type="checkbox" id="climatise">
+          <span>Bâtiment climatisé</span>
+        </label>
+      </div>
+
+      <!-- IGH — visible dès qu'un usage ≥ 2 est sélectionné (non applicable aux MI)
+           Impacts : catégorie CE3 (si bureaux) + dérogation Icconstruction à partir de 2028
+           Source : art. R.146-3 CCH + Décret n°2026-16, Chap. III §III -->
+      <div class="champ" id="groupe-igh" style="display:none">
+        <label class="lib">IGH — Immeuble de Grande Hauteur</label>
+        <label class="cb" style="margin-top:4px">
+          <input type="checkbox" id="igh">
+          <span>IGH au sens de l'art. R.146-3 CCH</span>
+        </label>
+        <span class="aide">
+          Affecte la catégorie CE (bureaux IGH → CE3).
+          Dérogation Icconstruction_maxmoyen : −5 % en 2028, −9,75 % en 2031
+          (Décret n°2026-16, 20 mars 2026, Chap. III §III).
+        </span>
+      </div>
+
+      <div class="champ" id="groupe-hsp">
+        <label class="lib" for="hsp">Hauteur sous plafond moyenne HSPmoy (m)</label>
+        <input type="number" id="hsp" min="2" max="30" step="0.1" placeholder="2.5">
+        <span class="aide">Laisser vide ou ≤ 2,5 m si standard</span>
+      </div>
+
+      <!-- Sagrément_ext — visible pour logements (usage 1-2) si décret JO 2026 applicable -->
+      <div class="champ span2" id="groupe-sagt" style="display:none">
+        <label class="lib" for="sagt">Surface d'agrément extérieur S<sub>agrément_ext</sub> (m²)</label>
+        <input type="number" id="sagt" min="0" step="0.1" placeholder="0">
+        <span class="aide">Balcons + loggias + terrasses en épannelage (hors toitures-terrasses, coursives d'accès) — usage 2 uniquement</span>
+      </div>
+
+    </div>
+  </details>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 5 — Impacts matière (Icconstruction)
+  ══════════════════════════════════════════════════════ -->
+  <details open id="section-icc">
+    <summary>
+      <span class="num-sec">5</span>
+      <h2>Impacts matière — Icconstruction</h2>
+      <span class="chevron">▾</span>
+    </summary>
+    <div class="corps">
+
+      <div class="champ">
+        <label class="lib" for="ic-lot1">Ic_lot1 — VRD (kgCO₂eq/m²)</label>
+        <input type="number" id="ic-lot1" min="0" step="0.1" placeholder="0">
+      </div>
+
+      <div class="champ">
+        <label class="lib" for="ic-lot2">Ic_lot2 — Fondations / infrastructure (kgCO₂eq/m²)</label>
+        <input type="number" id="ic-lot2" min="0" step="0.1" placeholder="0">
+      </div>
+
+      <div class="champ">
+        <label class="lib" for="ic-lot13">Ic_lot13 — Panneaux photovoltaïques (kgCO₂eq/m²)</label>
+        <input type="number" id="ic-lot13" min="0" step="0.1" placeholder="0">
+      </div>
+
+      <div class="champ">
+        <label class="lib" for="ic-ded">Ic_ded — Déduction (kgCO₂eq/m²)</label>
+        <input type="number" id="ic-ded" min="0" step="0.1" placeholder="0">
+      </div>
+
+    </div>
+  </details>
+
+  <!-- Erreurs de validation -->
+  <div id="bloc-err" class="bloc-err" style="display:none">
+    <strong>Veuillez corriger les erreurs suivantes :</strong>
+    <ul id="liste-err"></ul>
+  </div>
+
+  <!-- Bouton calcul -->
+  <div class="btn-wrap">
+    <button class="btn-calc" id="btn-calculer">Calculer les seuils RE2020</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       ZONE RÉSULTATS
+  ══════════════════════════════════════════════════════ -->
+  <div id="zone-res" style="display:none">
+
+    <div class="res-entete">
+      <span class="res-titre">Résultats — Seuils réglementaires RE2020</span>
+      <div class="badges-periodes">
+        <span id="badge-icc" class="badge"></span>
+        <span id="badge-ice" class="badge gris" style="display:none"></span>
+      </div>
+    </div>
+
+    <!-- Toggle mode debug -->
+    <label class="debug-lbl">
+      <input type="checkbox" id="toggle-debug"> Afficher les détails de calcul
+    </label>
+    <pre class="debug" id="debug-json" style="display:none"></pre>
+
+    <!-- Grille des 6 indicateurs -->
+    <div class="grille">
+
+      <div class="carte" id="carte-bbiomax">
+        <div class="c-desc">Bioclimatisme</div>
+        <div class="c-lib">Bbio<sub>max</sub></div>
+        <div class="c-val" id="val-bbiomax">—</div>
+        <div class="c-unite">pts</div>
+        <div class="c-mods" id="mod-bbiomax"></div>
+      </div>
+
+      <div class="carte" id="carte-cepnrmax">
+        <div class="c-desc">Énergie non renouvelable</div>
+        <div class="c-lib">Cep,nr<sub>max</sub></div>
+        <div class="c-val" id="val-cepnrmax">—</div>
+        <div class="c-unite">kWh ep,nr / m².an</div>
+        <div class="c-mods" id="mod-cepnrmax"></div>
+      </div>
+
+      <div class="carte" id="carte-cepmax">
+        <div class="c-desc">Consommation totale</div>
+        <div class="c-lib">Cep<sub>max</sub></div>
+        <div class="c-val" id="val-cepmax">—</div>
+        <div class="c-unite">kWh ep / m².an</div>
+        <div class="c-mods" id="mod-cepmax"></div>
+      </div>
+
+      <div class="carte" id="carte-icenergiemax">
+        <div class="c-desc">Impact carbone énergie</div>
+        <div class="c-lib">Ic énergie<sub>max</sub></div>
+        <div class="c-val" id="val-icenergiemax">—</div>
+        <div class="c-unite">kgCO₂eq / m²</div>
+        <div class="c-mods" id="mod-icenergiemax"></div>
+      </div>
+
+      <div class="carte" id="carte-icconstructionmax">
+        <div class="c-desc">Impact carbone matière+chantier</div>
+        <div class="c-lib">Ic construction<sub>max</sub></div>
+        <div class="c-val" id="val-icconstructionmax">—</div>
+        <div class="c-unite">kgCO₂eq / m²</div>
+        <div class="c-mods" id="mod-icconstructionmax"></div>
+      </div>
+
+      <div class="carte" id="carte-dhmax">
+        <div class="c-desc">Inconfort estival</div>
+        <div class="c-lib">DH<sub>max</sub></div>
+        <div class="c-val" id="val-dhmax">—</div>
+        <div class="c-unite">°C.h</div>
+        <div class="c-mods" id="mod-dhmax"></div>
+      </div>
+
+    </div>
+  </div><!-- fin #zone-res -->
+
+  <footer>
+    Cet outil est fourni à titre indicatif uniquement. Les seuils réglementaires définitifs
+    doivent être vérifiés par un professionnel qualifié et validés auprès des autorités
+    compétentes. L'auteur décline toute responsabilité quant à l'utilisation de ces résultats.
+  </footer>
+
+</div><!-- fin .conteneur -->
+
+<!-- Données UI (libellés d'usage, éligibilité CE3) — données publiques issues des décrets -->
+<!-- Le moteur de calcul s'exécute côté serveur via /.netlify/functions/calculer -->
+<script src="re2020-ui-data.js"></script>
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CORRESPONDANCE DÉPARTEMENT → ZONE CLIMATIQUE
+   Source : « zone climatique 0504.pdf » — Ministère de la Transition Écologique
+   ═══════════════════════════════════════════════════════════════════════════ */
+const DEPT_ZONE = {
+  '01':'H1c', '02':'H1a', '03':'H1c', '04':'H2d', '05':'H1c',
+  '06':'H3',  '07':'H2d', '08':'H1b', '09':'H2c', '10':'H1b',
+  '11':'H3',  '12':'H2c', '13':'H3',  '14':'H1a', '15':'H1c',
+  '16':'H2b', '17':'H2b', '18':'H2b', '19':'H1c',
+  '2A':'H3',  '2B':'H3',
+  '21':'H1c', '22':'H2a', '23':'H1c', '24':'H2c', '25':'H1c',
+  '26':'H2d', '27':'H1a', '28':'H1a', '29':'H2a', '30':'H3',
+  '31':'H2c', '32':'H2c', '33':'H2c', '34':'H3',  '35':'H2a',
+  '36':'H2b', '37':'H2b', '38':'H1c', '39':'H1c', '40':'H2c',
+  '41':'H2b', '42':'H1c', '43':'H1c', '44':'H2b', '45':'H1b',
+  '46':'H2c', '47':'H2c', '48':'H2d', '49':'H2b', '50':'H2a',
+  '51':'H1b', '52':'H1b', '53':'H2b', '54':'H1b', '55':'H1b',
+  '56':'H2a', '57':'H1b', '58':'H1b', '59':'H1a', '60':'H1a',
+  '61':'H1a', '62':'H1a', '63':'H1c', '64':'H2c', '65':'H2c',
+  '66':'H3',  '67':'H1b', '68':'H1b', '69':'H1c', '70':'H1b',
+  '71':'H1c', '72':'H2b', '73':'H1c', '74':'H1c', '75':'H1a',
+  '76':'H1a', '77':'H1a', '78':'H1a', '79':'H2b', '80':'H1a',
+  '81':'H2c', '82':'H2c', '83':'H3',  '84':'H2d', '85':'H2b',
+  '86':'H2b', '87':'H1c', '88':'H1b', '89':'H1b', '90':'H1b',
+  '91':'H1a', '92':'H1a', '93':'H1a', '94':'H1a', '95':'H1a',
+};
+
+/* Liste ordonnée pour le select (numéro, nom) */
+const DEPTS = [
+  ['01','Ain'],              ['02','Aisne'],            ['03','Allier'],
+  ['04','Alpes-de-Haute-Provence'], ['05','Hautes-Alpes'], ['06','Alpes-Maritimes'],
+  ['07','Ardèche'],          ['08','Ardennes'],         ['09','Ariège'],
+  ['10','Aube'],             ['11','Aude'],             ['12','Aveyron'],
+  ['13','Bouches-du-Rhône'], ['14','Calvados'],         ['15','Cantal'],
+  ['16','Charente'],         ['17','Charente-Maritime'],['18','Cher'],
+  ['19','Corrèze'],
+  ['2A','Corse-du-Sud'],     ['2B','Haute-Corse'],
+  ['21','Côte-d\'Or'],       ['22','Côtes-d\'Armor'],   ['23','Creuse'],
+  ['24','Dordogne'],         ['25','Doubs'],            ['26','Drôme'],
+  ['27','Eure'],             ['28','Eure-et-Loir'],     ['29','Finistère'],
+  ['30','Gard'],             ['31','Haute-Garonne'],    ['32','Gers'],
+  ['33','Gironde'],          ['34','Hérault'],          ['35','Ille-et-Vilaine'],
+  ['36','Indre'],            ['37','Indre-et-Loire'],   ['38','Isère'],
+  ['39','Jura'],             ['40','Landes'],           ['41','Loir-et-Cher'],
+  ['42','Loire'],            ['43','Haute-Loire'],      ['44','Loire-Atlantique'],
+  ['45','Loiret'],           ['46','Lot'],              ['47','Lot-et-Garonne'],
+  ['48','Lozère'],           ['49','Maine-et-Loire'],   ['50','Manche'],
+  ['51','Marne'],            ['52','Haute-Marne'],      ['53','Mayenne'],
+  ['54','Meurthe-et-Moselle'],['55','Meuse'],           ['56','Morbihan'],
+  ['57','Moselle'],          ['58','Nièvre'],           ['59','Nord'],
+  ['60','Oise'],             ['61','Orne'],             ['62','Pas-de-Calais'],
+  ['63','Puy-de-Dôme'],      ['64','Pyrénées-Atlantiques'],['65','Hautes-Pyrénées'],
+  ['66','Pyrénées-Orientales'],['67','Bas-Rhin'],       ['68','Haut-Rhin'],
+  ['69','Rhône'],            ['70','Haute-Saône'],      ['71','Saône-et-Loire'],
+  ['72','Sarthe'],           ['73','Savoie'],           ['74','Haute-Savoie'],
+  ['75','Paris'],            ['76','Seine-Maritime'],   ['77','Seine-et-Marne'],
+  ['78','Yvelines'],         ['79','Deux-Sèvres'],      ['80','Somme'],
+  ['81','Tarn'],             ['82','Tarn-et-Garonne'],  ['83','Var'],
+  ['84','Vaucluse'],         ['85','Vendée'],           ['86','Vienne'],
+  ['87','Haute-Vienne'],     ['88','Vosges'],           ['89','Yonne'],
+  ['90','Territoire de Belfort'], ['91','Essonne'],     ['92','Hauts-de-Seine'],
+  ['93','Seine-Saint-Denis'],['94','Val-de-Marne'],     ['95','Val-d\'Oise'],
+];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITAIRES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Convertit la valeur du select altitude en mètres (représentatif) */
+function altEnMetres(val) {
+  if (val === 'sup800')  return 1000;
+  if (val === '400a800') return 600;
+  return 200; /* inf400 */
+}
+
+/* Libellé lisible d'une plage réglementaire */
+function lblPeriode(plage) {
+  return ({
+    '2022-2024': 'Période 1 — 2022-2024',
+    '2025-2027': 'Période 2 — 2025-2027',
+    '2028-2030': 'Période 3 — 2028-2030',
+    '2031+':     'Période 4 — 2031+',
+    '2028+':     'Période 3 — 2028+',
+  })[plage] || plage;
+}
+
+/* Libellé de période contextualisé (gère la coupure 01/07/2026) */
+function lblPeriodeBadge(annee) {
+  const plage = getPlagePeriode(annee);
+  if (annee === 2026) {
+    const apres = document.getElementById('apres-juillet-2026').checked;
+    return apres
+      ? 'Période 2 — 01/07/2026-2027 (Décret 2026-200)'
+      : 'Période 2 — 2025 au 30/06/2026';
+  }
+  return lblPeriode(plage);
+}
+
+/* Détermine si le PC est déposé à partir du 01/05/2026 (usages 6-28 soumis RE2020) */
+function isApresMAI2026() {
+  const anneePC = parseInt(document.getElementById('annee-pc').value) || 0;
+  if (anneePC > 2026) return true;
+  if (anneePC === 2026) return document.getElementById('apres-mai-2026').checked
+                            || document.getElementById('apres-juillet-2026').checked;
+  return false;
+}
+
+/* Détermine si le décret n°2026-200 s'applique pour le PC saisi */
+function isDecretJO2026() {
+  const anneePC = parseInt(document.getElementById('annee-pc').value) || 0;
+  if (anneePC > 2026) return true;
+  if (anneePC === 2026) return document.getElementById('apres-juillet-2026').checked;
+  return false;
+}
+
+/* Formate une valeur de coefficient pour l'affichage */
+function fmtCoef(v) {
+  if (typeof v === 'boolean') return v ? 'oui' : 'non';
+  if (typeof v === 'number')  return Number.isInteger(v) ? String(v) : v.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+  return String(v);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INITIALISATION DES SELECTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Peupler le select départements */
+(function initDepts() {
+  const sel = document.getElementById('departement');
+  DEPTS.forEach(function([code, nom]) {
+    const zone = DEPT_ZONE[code];
+    const opt  = document.createElement('option');
+    opt.value       = code;
+    opt.textContent = code + ' — ' + nom + '  (' + zone + ')';
+    sel.appendChild(opt);
+  });
+})();
+
+/* Peupler le select usages depuis l'objet USAGES (re2020-data.js) */
+(function initUsages() {
+  const sel = document.getElementById('usage');
+  for (let i = 1; i <= 28; i++) {
+    const u = USAGES[i];
+    if (!u) continue;
+    const opt = document.createElement('option');
+    opt.value       = i;
+    opt.textContent = i + ' — ' + u.libelle;
+    sel.appendChild(opt);
+  }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RÉACTIVITÉ DU FORMULAIRE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Département → zone climatique automatique */
+document.getElementById('departement').addEventListener('change', function() {
+  const zone = DEPT_ZONE[this.value];
+  const src  = document.getElementById('zone-source');
+  if (zone) {
+    document.getElementById('zone').value = zone;
+    src.textContent = 'Déduite du département';
+    src.classList.remove('avert');
+    src.style.display = 'block';
+  } else {
+    src.style.display = 'none';
+  }
+});
+
+/* Zone modifiée manuellement → mise à jour du label */
+document.getElementById('zone').addEventListener('change', function() {
+  const dept    = document.getElementById('departement').value;
+  const src     = document.getElementById('zone-source');
+  if (!dept) { src.style.display = 'none'; return; }
+  const zoneDept = DEPT_ZONE[dept];
+  if (this.value === zoneDept) {
+    src.textContent = 'Déduite du département';
+    src.classList.remove('avert');
+  } else {
+    src.textContent = 'Modifiée manuellement';
+    src.classList.add('avert');
+  }
+  src.style.display = 'block';
+});
+
+/* Année PC → badge période + visibilité toggle 01/07/2026 */
+document.getElementById('annee-pc').addEventListener('input', function() {
+  const annee = parseInt(this.value);
+  const badge = document.getElementById('badge-annee');
+  /* Afficher / masquer les toggles 2026 */
+  setVisible('groupe-apres-mai-2026',     annee === 2026);
+  setVisible('groupe-apres-juillet-2026', annee === 2026);
+  if (annee >= 2022 && annee <= 2040) {
+    badge.textContent    = lblPeriodeBadge(annee);
+    badge.style.display  = 'inline-block';
+    /* Mettre à jour la visibilité des champs dépendants (IGH, Sagt) */
+    const usage = parseInt(document.getElementById('usage').value);
+    mettreAJourVisibiliteChamps(usage || 0);
+    if (usage) verifierUsage(usage, annee);
+  } else {
+    badge.style.display = 'none';
+    setVisible('groupe-apres-mai-2026',     false);
+    setVisible('groupe-apres-juillet-2026', false);
+  }
+});
+
+/* Toggle 01/05/2026 → badge + revalidation usage */
+document.getElementById('apres-mai-2026').addEventListener('change', function() {
+  const annee = parseInt(document.getElementById('annee-pc').value) || 0;
+  const badge = document.getElementById('badge-annee');
+  if (annee >= 2022) {
+    badge.textContent   = lblPeriodeBadge(annee);
+    badge.style.display = 'inline-block';
+  }
+  const usage = parseInt(document.getElementById('usage').value);
+  if (usage) verifierUsage(usage, annee);
+});
+
+/* Toggle 01/07/2026 → mise à jour du badge et des champs + auto-coche mai (juillet implique mai) */
+document.getElementById('apres-juillet-2026').addEventListener('change', function() {
+  const cbMai = document.getElementById('apres-mai-2026');
+  if (this.checked) { cbMai.checked = true; cbMai.disabled = true; }
+  else              { cbMai.disabled = false; }
+  const annee = parseInt(document.getElementById('annee-pc').value) || 0;
+  const badge = document.getElementById('badge-annee');
+  if (annee >= 2022) {
+    badge.textContent   = lblPeriodeBadge(annee);
+    badge.style.display = 'inline-block';
+  }
+  const usage = parseInt(document.getElementById('usage').value);
+  mettreAJourVisibiliteChamps(usage || 0);
+});
+
+/* ─── Visibilité des champs selon l'usage ───────────────────────────────────
+   Règles issues des données du moteur (MBBRUIT, DH_MAXCAT, ICCONSTRUCTION_MAX_MOYEN)
+   Appelé à chaque changement d'usage et à l'initialisation.
+   ─────────────────────────────────────────────────────────────────────────── */
+function setVisible(id, visible) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = visible ? '' : 'none';
+}
+
+/* Alias DH identiques à ceux du moteur (re2020-engine.js) */
+const _DH_ALIAS = { 5: 4, 9: 8, 11: 10, 28: 25 };
+
+function mettreAJourVisibiliteChamps(usage) {
+  const vide    = !usage;
+  const anneePC = parseInt(document.getElementById('annee-pc').value) || 0;
+  const decret  = isDecretJO2026();
+
+  /* 1. NL / Smoylgt — logements collectifs uniquement (MI = 1 logement, smoylgt = Sref) */
+  setVisible('groupe-nl', vide || usage === 2);
+
+  /* 2. Bruit BR2/BR3 */
+  const bruitActif = vide || !!(MBBRUIT[usage] && MBBRUIT[usage].BR2BR3 !== 0);
+  setVisible('groupe-bruit', bruitActif);
+
+  /* 3. Climatisé */
+  const refDh   = _DH_ALIAS[usage] ?? usage;
+  const dhActif = vide || !!DH_MAXCAT[refDh];
+  setVisible('groupe-climatise', dhActif);
+
+  /* 4. IGH — visible dès qu'un usage ≥ 2 est sélectionné (pas applicable aux MI usage 1).
+        Rôle double : catégorie CE3 (bureaux IGH) + dérogation Icconstruction à partir de 2028.
+        Source : art. R.146-3 CCH + Décret n°2026-16 Chap. III §III */
+  const ighActif = vide || usage >= 2;
+  setVisible('groupe-igh', ighActif);
+
+  /* 5. HSP — toujours visible (formule MbHSP/McHSP/MiHSP affecte usages 1 et 2) */
+  setVisible('groupe-hsp', true);
+
+  /* 6. Toggles 2026 — visibles uniquement pour anneePC = 2026 */
+  setVisible('groupe-apres-mai-2026',     anneePC === 2026);
+  setVisible('groupe-apres-juillet-2026', anneePC === 2026);
+
+  /* 7. Sagrément_ext — logements collectifs (usage 2), toujours visible
+        Le moteur n'applique le Mi que si decretJO2026 — Source : Décret n°2026-200, Chap. III §III */
+  const sagtActif = vide || usage === 2;
+  setVisible('groupe-sagt', sagtActif);
+
+  /* 8. Section 5 Icconstruction */
+  const iccActif = vide || !!ICCONSTRUCTION_MAX_MOYEN[usage];
+  setVisible('section-icc', iccActif);
+}
+
+/* Usage → visibilité des champs + vérification date d'entrée en vigueur */
+document.getElementById('usage').addEventListener('change', function() {
+  const usage   = parseInt(this.value);
+  const anneePC = parseInt(document.getElementById('annee-pc').value);
+  mettreAJourVisibiliteChamps(usage || 0);
+  if (usage) verifierUsage(usage, anneePC);
+});
+
+/* Sref / NL → calcul automatique de Smoylgt */
+['sref', 'nl'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', mettreAJourSmoylgt);
+});
+
+function mettreAJourSmoylgt() {
+  const sref = parseFloat(document.getElementById('sref').value);
+  const nl   = parseInt(document.getElementById('nl').value);
+  const info = document.getElementById('smoylgt-info');
+  if (sref > 0 && nl > 0) {
+    const smoy = Math.round(sref / nl * 10) / 10;
+    info.textContent = 'Smoy lgt = ' + smoy + ' m² / logement';
+  } else {
+    info.textContent = '';
+  }
+}
+
+/* Vérifie si l'usage est soumis à la RE2020 pour l'année PC donnée */
+function verifierUsage(usage, anneePC) {
+  const el = document.getElementById('avert-usage');
+  if (!usage || !anneePC || anneePC < 2022) { el.style.display = 'none'; return; }
+  const dateVigueur = USAGES[usage] && USAGES[usage].dateEntreeVigueur;
+  if (!dateVigueur) { el.style.display = 'none'; return; }
+  const anneeVigueur = parseInt(dateVigueur.substring(0, 4));
+  let nonEligible = false;
+  if (anneePC < anneeVigueur) {
+    nonEligible = true;
+  } else if (anneePC === anneeVigueur && anneeVigueur === 2026) {
+    if (!isApresMAI2026()) nonEligible = true;
+  }
+  if (nonEligible) {
+    el.textContent =
+      '⚠ Usage non soumis à la RE2020 pour un PC déposé en '
+      + anneePC + ' (entrée en vigueur : ' + dateVigueur + ')';
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VALIDATION DU FORMULAIRE
+   ═══════════════════════════════════════════════════════════════════════════ */
+function validerFormulaire(params) {
+  const errs = [];
+  if (!params.anneePC || params.anneePC < 2022)
+    errs.push('Année du PC manquante ou invalide (minimum : 2022)');
+  if (!params.zone)
+    errs.push('Zone climatique manquante — choisir un département ou sélectionner la zone');
+  if (!params.usage)
+    errs.push('Usage manquant');
+  if (!params.sref || params.sref <= 0)
+    errs.push('Surface de référence Sref manquante ou nulle');
+  /* Usage non encore soumis à la RE2020 pour l'année / mois du PC */
+  if (params.anneePC && params.usage) {
+    const dateVigueur = USAGES[params.usage] && USAGES[params.usage].dateEntreeVigueur;
+    if (dateVigueur) {
+      const anneeVigueur = parseInt(dateVigueur.substring(0, 4));
+      let nonEligible = false;
+      if (params.anneePC < anneeVigueur) {
+        nonEligible = true;
+      } else if (params.anneePC === anneeVigueur && anneeVigueur === 2026) {
+        /* Pour 2026, les toggles permettent de préciser le mois de dépôt */
+        if (!isApresMAI2026()) nonEligible = true;
+      }
+      if (nonEligible) {
+        errs.push(
+          'Cet usage n\'est pas soumis à la RE2020 pour un PC déposé en '
+          + params.anneePC + '. Entrée en vigueur : ' + dateVigueur + '. Aucun calcul possible.'
+        );
+      }
+    }
+  }
+  /* Catégorie CE3 réservée à certains usages (Décret n°2026-16, Chap. V) */
+  if (params.categorie === 'cat3' && params.usage && !USAGES_CE3.has(params.usage)) {
+    errs.push(
+      'La catégorie 3 (CE3) n\'est pas applicable à l\'usage sélectionné. '
+      + 'Usages éligibles : bureaux, hôtels, restaurants, commerces, EAPE, '
+      + 'universitaires, médiathèques, établissements de santé (partie jour) '
+      + '(Décret n°2026-16, Chap. V).'
+    );
+  }
+  /* CE3 via IGH interdit pour l'usage 21 (établ. santé partie jour) */
+  if (params.categorie === 'cat3' && params.usage === 21 && params.igh) {
+    errs.push(
+      'Pour les établissements de santé (partie jour, usage 21), la catégorie CE3 '
+      + 'n\'est accessible que via les baies non ouvrantes, pas via l\'IGH '
+      + '(Décret n°2026-16, Chap. V).'
+    );
+  }
+  return errs;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RENDU DES RÉSULTATS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Méta-structure des indicateurs pour la décomposition de formule ─── */
+const META_INDICATEURS = {
+  bbiomax: {
+    type: 'multiplicatif',
+    baseKey: 'bbioMaxMoyen', baseLabel: 'Bbio\u2090',
+    modifiers: [
+      { key: 'mbgeo',     label: 'Mbgéo'  },
+      { key: 'mbcombles', label: 'Mbcom'  },
+      { key: 'mbsurfMoy', label: 'Mbsmoy' },
+      { key: 'mbsurfTot', label: 'Mbstot' },
+      { key: 'mbbruit',   label: 'Mbbr'   },
+      { key: 'mbhsp',     label: 'MbHSP'  },
+    ],
+  },
+  cepnrmax: {
+    type: 'multiplicatif',
+    baseKey: 'cepNrMaxMoyen', baseLabel: 'Cep,nr\u2090',
+    modifiers: [
+      { key: 'mcgeo',     label: 'Mcgéo'  },
+      { key: 'mccombles', label: 'Mccom'  },
+      { key: 'mcsurfMoy', label: 'Mcsmoy' },
+      { key: 'mcsurfTot', label: 'Mcstot' },
+      { key: 'mccat',     label: 'Mccat'  },
+      { key: 'mchsp',     label: 'McHSP'  },
+    ],
+  },
+  cepmax: {
+    type: 'multiplicatif',
+    baseKey: 'cepMaxMoyen', baseLabel: 'Cep\u2090',
+    modifiers: [
+      { key: 'mcgeo',     label: 'Mcgéo'  },
+      { key: 'mccombles', label: 'Mccom'  },
+      { key: 'mcsurfMoy', label: 'Mcsmoy' },
+      { key: 'mcsurfTot', label: 'Mcstot' },
+      { key: 'mccat',     label: 'Mccat'  },
+      { key: 'mchsp',     label: 'McHSP'  },
+    ],
+  },
+  icenergiemax: {
+    type: 'multiplicatif',
+    baseKey: 'icEnergieMaxMoyen', baseLabel: 'Ice\u2090',
+    modifiers: [
+      { key: 'mcgeo',     label: 'Mcgéo'  },
+      { key: 'mccombles', label: 'Mccom'  },
+      { key: 'mcsurfMoy', label: 'Mcsmoy' },
+      { key: 'mcsurfTot', label: 'Mcstot' },
+      { key: 'mccat',     label: 'Mccat'  },
+      { key: 'mchsp',     label: 'McHSP'  },
+    ],
+  },
+  icconstructionmax: {
+    type: 'mixte',
+    baseKey: 'icConstructionMaxMoyen', baseLabel: 'Icc\u2090',
+    multModifiers: [
+      { key: 'micombles', label: 'Micom'  },
+      { key: 'misurfMoy', label: 'Mismoy' },
+      { key: 'misurfTot', label: 'Mistot' },
+    ],
+    addModifiers: [
+      { key: 'migeo',         label: 'Migéo'  },
+      { key: 'miinfra',       label: 'Miinfra'},
+      { key: 'mivrd',         label: 'Mivrd'  },
+      { key: 'mipv',          label: 'Mipv'   },
+      { key: 'mided',         label: 'Mided'  },
+      { key: 'miHSP',         label: 'MiHSP'  },
+      { key: 'miagrementExt', label: 'Miagt'  },
+      { key: 'miclimRCU',     label: 'MiRCU'  },
+    ],
+    note: '[sur 50 ans]',
+  },
+  dhmax: { type: 'direct' },
+};
+
+/* Formate un modificateur avec signe */
+function fmtMod(v) {
+  if (typeof v !== 'number') return String(v ?? '—');
+  const s = fmtCoef(Math.abs(v));
+  return v < 0 ? '\u2212' + s : (v > 0 ? '+' + s : s);
+}
+
+/* Génère la décomposition de formule pour une carte (remplace renderCoefs) */
+function renderFormule(el, coefs, cle) {
+  if (!coefs) { el.innerHTML = ''; return; }
+  const meta = META_INDICATEURS[cle];
+  if (!meta) { el.innerHTML = ''; return; }
+  let html = '';
+
+  if (meta.type === 'multiplicatif') {
+    const base  = coefs[meta.baseKey];
+    const somme = coefs.sommeModulations || 0;
+    if (base == null) { el.innerHTML = ''; return; }
+
+    /* Ligne d'expression : base × (1 + Σmod) */
+    const partsStr = meta.modifiers
+      .map(function(m) { return fmtCoef(coefs[m.key] ?? 0); })
+      .join(' + ');
+    html += '<div class="cf-expr">' + fmtCoef(base) + ' \u00d7 (1 + ' + partsStr + ')</div>';
+
+    /* Grille étiquetée */
+    html += '<div class="cf-grille">';
+    html += '<div class="cf-term"><span class="cf-lbl">' + meta.baseLabel + '</span>'
+         + '<span class="cf-val">' + fmtCoef(base) + '</span></div>';
+    meta.modifiers.forEach(function(m) {
+      const v = coefs[m.key] ?? 0;
+      html += '<div class="cf-term"><span class="cf-lbl">' + m.label + '</span>'
+           + '<span class="cf-val' + (v !== 0 ? ' actif' : '') + '">' + fmtMod(v) + '</span></div>';
+    });
+    html += '</div>';
+
+  } else if (meta.type === 'mixte') {
+    const base = coefs[meta.baseKey];
+    if (base == null) { el.innerHTML = ''; return; }
+
+    /* Ligne d'expression : base × (1 + Σmi_mult) + Σmi_add */
+    const multStr = meta.multModifiers
+      .map(function(m) { return fmtCoef(coefs[m.key] ?? 0); }).join(' + ');
+    const addItems = meta.addModifiers.filter(function(m) { return coefs[m.key] != null; });
+    let expr = fmtCoef(base) + ' \u00d7 (1 + ' + multStr + ')';
+    if (addItems.length) expr += ' + ' + addItems.map(function(m) { return fmtCoef(coefs[m.key]); }).join(' + ');
+    html += '<div class="cf-expr">' + expr + '</div>';
+
+    /* Grille partie multiplicative */
+    html += '<div class="cf-grille">';
+    html += '<div class="cf-term"><span class="cf-lbl">' + meta.baseLabel + '</span>'
+         + '<span class="cf-val">' + fmtCoef(base) + '</span></div>';
+    meta.multModifiers.forEach(function(m) {
+      const v = coefs[m.key] ?? 0;
+      html += '<div class="cf-term"><span class="cf-lbl">' + m.label + '</span>'
+           + '<span class="cf-val' + (v !== 0 ? ' actif' : '') + '">' + fmtMod(v) + '</span></div>';
+    });
+    html += '</div>';
+
+    /* Séparateur + grille partie additive */
+    if (addItems.length) {
+      html += '<div class="cf-sep">+ termes additifs</div>';
+      html += '<div class="cf-grille">';
+      addItems.forEach(function(m) {
+        const v = coefs[m.key];
+        html += '<div class="cf-term"><span class="cf-lbl">' + m.label + '</span>'
+             + '<span class="cf-val' + (v !== 0 ? ' actif' : '') + '">' + fmtMod(v) + '</span></div>';
+      });
+      html += '</div>';
+    }
+    if (meta.note) html += '<div class="cf-note">' + meta.note + '</div>';
+
+  } else if (meta.type === 'direct') {
+    /* DHmax — pas de modulation, afficher le contexte */
+    const { categorie, zone, climatise, smoylgt } = coefs;
+    html += '<div class="cf-grille">';
+    html += '<div class="cf-term"><span class="cf-lbl">Catégorie</span><span class="cf-val">' + (categorie || '—') + '</span></div>';
+    html += '<div class="cf-term"><span class="cf-lbl">Zone</span><span class="cf-val">' + (zone || '—') + '</span></div>';
+    if (smoylgt != null)
+      html += '<div class="cf-term"><span class="cf-lbl">Smoy</span><span class="cf-val">' + fmtCoef(smoylgt) + ' m²</span></div>';
+    html += '<div class="cf-term"><span class="cf-lbl">Climatisé</span><span class="cf-val">' + (climatise ? 'oui' : 'non') + '</span></div>';
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+/* Met à jour l'affichage d'une carte indicateur */
+function updateCarte(carteId, valId, modId, result, erreur, cle) {
+  const carte = document.getElementById(carteId);
+  const valEl = document.getElementById(valId);
+  const modEl = document.getElementById(modId);
+  carte.className = 'carte';
+
+  if (erreur) {
+    valEl.className    = 'c-val na';
+    valEl.textContent  = 'Erreur';
+    modEl.innerHTML    = '<span style="color:var(--danger);font-size:10px">' + erreur + '</span>';
+    carte.classList.add('err');
+    return;
+  }
+  if (!result || result.valeur === null || result.valeur === undefined) {
+    valEl.className    = 'c-val na';
+    valEl.textContent  = 'N/A';
+    modEl.innerHTML    = '<span>Pas d\'exigence pour cet usage / cette période</span>';
+    carte.classList.add('na');
+    return;
+  }
+  valEl.className   = 'c-val';
+  valEl.textContent = result.valeur;
+  renderFormule(modEl, result.coefficients, cle);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CALCUL PRINCIPAL
+   ═══════════════════════════════════════════════════════════════════════════ */
+document.getElementById('btn-calculer').addEventListener('click', async function() {
+
+  /* Lecture du formulaire */
+  const anneePC  = parseInt(document.getElementById('annee-pc').value)   || 0;
+  const usage    = parseInt(document.getElementById('usage').value)      || 0;
+  const zone     = document.getElementById('zone').value;
+  const sref     = parseFloat(document.getElementById('sref').value)     || 0;
+  const nl       = parseInt(document.getElementById('nl').value)         || 0;
+
+  /* Smoylgt : MI (usage 1) → une seule maison, smoylgt = Sref. LC (usage 2) → Sref/NL, fallback 50 m² */
+  const smoylgt = usage === 1 ? sref : (nl > 0 && sref > 0) ? (sref / nl) : 50;
+
+  const params = {
+    usage,
+    anneePC,
+    zone,
+    altitude:         altEnMetres(document.getElementById('altitude').value),
+    sref,
+    smoylgt,
+    bruit:            document.getElementById('bruit').checked ? 'BR2BR3' : 'BR1',
+    categorie:        document.getElementById('categorie').value,
+    climatise:        document.getElementById('climatise').checked,
+    rcu:              document.getElementById('rcu').checked,
+    hsp:              parseFloat(document.getElementById('hsp').value)   || 0,
+    igh:              document.getElementById('igh').checked,
+    sagrementExt:     parseFloat(document.getElementById('sagt').value)  || 0,
+    apresJuillet2026: isDecretJO2026(),
+    icLot1:           parseFloat(document.getElementById('ic-lot1').value)  || 0,
+    icLot2:           parseFloat(document.getElementById('ic-lot2').value)  || 0,
+    icLot13:          parseFloat(document.getElementById('ic-lot13').value) || 0,
+    icDed:            parseFloat(document.getElementById('ic-ded').value)   || 0,
+  };
+
+  /* Validation */
+  const errs    = validerFormulaire(params);
+  const blocErr = document.getElementById('bloc-err');
+  if (errs.length) {
+    document.getElementById('liste-err').innerHTML =
+      errs.map(function(e) { return '<li>' + e + '</li>'; }).join('');
+    blocErr.style.display = 'block';
+    blocErr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('zone-res').style.display = 'none';
+    return;
+  }
+  blocErr.style.display = 'none';
+
+  /* Appel du moteur de calcul via la fonction serverless (engine côté serveur) */
+  let resultats, erreurs;
+  const btnCalculer = document.getElementById('btn-calculer');
+  btnCalculer.disabled = true;
+  btnCalculer.textContent = 'Calcul en cours…';
+  try {
+    const reponse = await fetch('/.netlify/functions/calculer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    const res = await reponse.json();
+    if (!reponse.ok) {
+      throw new Error(res.erreur || 'Erreur serveur (' + reponse.status + ')');
+    }
+    resultats = res.resultats;
+    erreurs   = res.erreurs;
+  } catch (e) {
+    document.getElementById('liste-err').innerHTML = '<li>' + e.message + '</li>';
+    blocErr.style.display = 'block';
+    document.getElementById('zone-res').style.display = 'none';
+    return;
+  } finally {
+    btnCalculer.disabled = false;
+    btnCalculer.textContent = 'Calculer';
+  }
+
+  /* Badges de période dans l'entête résultats */
+  const plageIcc = getPlagePeriode(anneePC);
+  const plageIce = getPlagePeriodeIcenergie(anneePC);
+
+  let lblIcc = lblPeriodeBadge(anneePC) + ' — Icconstruction';
+  if (params.igh && params.apresJuillet2026 && anneePC >= 2028) {
+    lblIcc += ' (IGH −5 %)';
+    if (anneePC >= 2031) lblIcc = lblIcc.replace('−5 %', '−9,75 %');
+  }
+  document.getElementById('badge-icc').textContent = lblIcc;
+
+  const badgeIce = document.getElementById('badge-ice');
+  if (plageIce !== plageIcc) {
+    badgeIce.textContent    = lblPeriodeBadge(anneePC) + ' — Icénergie';
+    badgeIce.style.display  = 'inline-block';
+  } else {
+    badgeIce.style.display  = 'none';
+  }
+
+  /* Mise à jour des 6 cartes résultats */
+  const CARTES = [
+    ['carte-bbiomax',           'val-bbiomax',           'mod-bbiomax',           'bbiomax'],
+    ['carte-cepnrmax',          'val-cepnrmax',          'mod-cepnrmax',          'cepnrmax'],
+    ['carte-cepmax',            'val-cepmax',            'mod-cepmax',            'cepmax'],
+    ['carte-icenergiemax',      'val-icenergiemax',      'mod-icenergiemax',      'icenergiemax'],
+    ['carte-icconstructionmax', 'val-icconstructionmax', 'mod-icconstructionmax', 'icconstructionmax'],
+    ['carte-dhmax',             'val-dhmax',             'mod-dhmax',             'dhmax'],
+  ];
+  CARTES.forEach(function([cId, vId, mId, cle]) {
+    updateCarte(cId, vId, mId, resultats[cle], erreurs[cle], cle);
+  });
+
+  /* Données de debug (JSON complet) */
+  document.getElementById('debug-json').textContent =
+    JSON.stringify({ params: params, resultats: resultats, erreurs: erreurs }, null, 2);
+
+  /* Afficher la zone résultats et scroller */
+  const zr = document.getElementById('zone-res');
+  zr.style.display = 'block';
+  zr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+/* Toggle détails de calcul */
+document.getElementById('toggle-debug').addEventListener('change', function() {
+  document.getElementById('debug-json').style.display = this.checked ? 'block' : 'none';
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SUITE DE TESTS DE NON-RÉGRESSION
+   Appelable depuis la console : testSuite()
+   4 cas de référence extraits du tableur calcul_seuils_RE2020_NU.xlsx
+   Seuil de tolérance : écart < 1 → ✅ OK, ≥ 1 → ❌ KO
+   ═══════════════════════════════════════════════════════════════════════════ */
+window.testSuite = async function() {
+  const SEUIL = 1; // tolérance maximale
+
+  /* Valeurs attendues issues du tableur de référence (anneePC = 2028) */
+  const CAS = [
+    {
+      nom: 'TEST 1 — LC / Ain (H1c) / <400 m / Sref=4000 m² / NL=60',
+      params: {
+        usage: 2, anneePC: 2028, zone: 'H1c', altitude: 200,
+        sref: 4000, smoylgt: 4000 / 60, hsp: 2.6,
+        categorie: 'cat1', bruit: 'BR1', climatise: false, rcu: false,
+        icLot1: 0, icLot2: 0, icLot13: 0, icDed: 0,
+      },
+      attendu: { bbiomax: 77, cepnrmax: 73, cepmax: 88, icenergiemax: 269, icconstructionmax: 532, dhmax: 1250 },
+    },
+    {
+      nom: 'TEST 2 — Bureaux / Paris (H1a) / <400 m / Sref=2000 m²',
+      params: {
+        usage: 3, anneePC: 2028, zone: 'H1a', altitude: 200,
+        sref: 2000, smoylgt: 0, hsp: 2.5,
+        categorie: 'cat1', bruit: 'BR1', climatise: false, rcu: false,
+        icLot1: 0, icLot2: 0, icLot13: 0, icDed: 0,
+      },
+      attendu: { bbiomax: 87, cepnrmax: 73, cepmax: 82, icenergiemax: 194, icconstructionmax: 612, dhmax: 1150 },
+    },
+    {
+      nom: 'TEST 3 — MI / Bouches-du-Rhône (H3) / <400 m / Sref=150 m² / NL=1',
+      params: {
+        usage: 1, anneePC: 2028, zone: 'H3', altitude: 200,
+        sref: 150, smoylgt: 150, hsp: 2.6,
+        categorie: 'cat1', bruit: 'BR1', climatise: false, rcu: false,
+        icLot1: 0, icLot2: 0, icLot13: 0, icDed: 0,
+      },
+      attendu: { bbiomax: 51, cepnrmax: 33, cepmax: 45, icenergiemax: 96, icconstructionmax: 481, dhmax: 1250 },
+    },
+    {
+      nom: 'TEST 4 — LC / Isère (H1c) / >800 m / Sref=5000 m² / NL=80',
+      params: {
+        usage: 2, anneePC: 2028, zone: 'H1c', altitude: 900,
+        sref: 5000, smoylgt: 5000 / 80, hsp: 2.6,
+        categorie: 'cat1', bruit: 'BR1', climatise: false, rcu: false,
+        icLot1: 0, icLot2: 0, icLot13: 0, icDed: 0,
+      },
+      attendu: { bbiomax: 116, cepnrmax: 109, cepmax: 132, icenergiemax: 403, icconstructionmax: 529, dhmax: 1250 },
+    },
+  ];
+
+  const INDICATEURS = [
+    { cle: 'bbiomax',           label: 'Bbiomax',   unite: 'pts' },
+    { cle: 'cepnrmax',          label: 'Cep,nrmax', unite: 'kWh' },
+    { cle: 'cepmax',            label: 'Cepmax',    unite: 'kWh' },
+    { cle: 'icenergiemax',      label: 'Icénergie', unite: 'kg' },
+    { cle: 'icconstructionmax', label: 'Icconstruction', unite: 'kg' },
+    { cle: 'dhmax',             label: 'DHmax',     unite: '°C.h' },
+  ];
+
+  let totalOk = 0, totalKo = 0;
+
+  console.log('%c══════════════════════════════════════════════', 'color:#1a5276;font-weight:bold');
+  console.log('%c SUITE DE TESTS RE2020 — 4 cas de référence  ', 'color:#1a5276;font-weight:bold;background:#d6eaf8');
+  console.log('%c══════════════════════════════════════════════', 'color:#1a5276;font-weight:bold');
+
+  for (const cas of CAS) {
+    let res;
+    try {
+      const reponse = await fetch('/.netlify/functions/calculer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cas.params),
+      });
+      res = await reponse.json();
+      if (!reponse.ok) throw new Error(res.erreur || 'Erreur ' + reponse.status);
+    } catch (e) {
+      console.error('❌ ' + cas.nom + ' — EXCEPTION : ' + e.message);
+      totalKo += INDICATEURS.length;
+      continue;
+    }
+
+    let lignesCas = [];
+    let casOk = true;
+
+    INDICATEURS.forEach(function(ind) {
+      const attendu = cas.attendu[ind.cle];
+      if (attendu === undefined) return; // indicateur non testé pour ce cas
+
+      const result = res.resultats[ind.cle];
+      const erreur = res.erreurs[ind.cle];
+
+      if (erreur) {
+        lignesCas.push('  ❌ ' + ind.label + ' — ERREUR MOTEUR : ' + erreur);
+        casOk = false; totalKo++;
+        return;
+      }
+      if (!result || result.valeur === null || result.valeur === undefined) {
+        lignesCas.push('  ❌ ' + ind.label + ' — valeur null/N/A (attendu ' + attendu + ')');
+        casOk = false; totalKo++;
+        return;
+      }
+
+      const calc = result.valeur;
+      const ecart = Math.abs(calc - attendu);
+      const ok = ecart < SEUIL;
+      if (ok) {
+        lignesCas.push('  ✅ ' + ind.label + ' = ' + calc + ' (attendu ' + attendu + ')');
+        totalOk++;
+      } else {
+        lignesCas.push('  ❌ ' + ind.label + ' = ' + calc + ' (attendu ' + attendu + ', Δ=' + ecart.toFixed(1) + ')');
+        casOk = false; totalKo++;
+      }
+    });
+
+    console.log('\n' + (casOk ? '✅' : '❌') + ' ' + cas.nom);
+    lignesCas.forEach(function(l) { console.log(l); });
+  }
+
+  const total = totalOk + totalKo;
+  console.log('\n%c══════════════════════════════════════════════', 'color:#1a5276;font-weight:bold');
+  console.log('%c Résultat : ' + totalOk + ' / ' + total + ' indicateurs OK ',
+    totalOk === total ? 'color:green;font-weight:bold' : 'color:#c0392b;font-weight:bold');
+  console.log('%c══════════════════════════════════════════════', 'color:#1a5276;font-weight:bold');
+
+  return { ok: totalOk, ko: totalKo, total: total };
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTRAINTE CATÉGORIE — CLIMATISATION + USAGE
+   Règles (Décret n°2026-16, Chap. V, § Catégorie CE d'un local) :
+   1. Sans climatisation → CE1 obligatoire
+   2. CE3 réservé aux usages : 3,6,7,8-12,13-17,21 (USAGES_CE3 dans re2020-data.js)
+   ═══════════════════════════════════════════════════════════════════════════ */
+function mettreAJourContrainteCategorie() {
+  const climatise  = document.getElementById('climatise').checked;
+  const usage      = parseInt(document.getElementById('usage').value) || 0;
+  const selectCat  = document.getElementById('categorie');
+  const aideMsg    = document.getElementById('aide-cat-clim');
+  const opt2       = document.getElementById('opt-cat2');
+  const opt3       = document.getElementById('opt-cat3');
+
+  /* Règle 1 : sans climatisation → CE1 uniquement */
+  if (!climatise) {
+    if (selectCat.value !== 'cat1') selectCat.value = 'cat1';
+    opt2.disabled = true;
+    opt3.disabled = true;
+    aideMsg.textContent = 'Sans climatisation, seule la catégorie 1 est possible (Chap. V — Catégorie CE d\'un local)';
+    aideMsg.style.display = 'block';
+    return;
+  }
+
+  /* Règle 2 : CE3 réservé aux usages de la liste (Décret n°2026-16 Chap. V) */
+  const cat3Ok = !usage || USAGES_CE3.has(usage);
+  opt2.disabled = false;
+  opt3.disabled = !cat3Ok;
+
+  if (!cat3Ok) {
+    /* Forcer CE1 si CE3 était sélectionnée avec un usage incompatible */
+    if (selectCat.value === 'cat3') selectCat.value = 'cat1';
+    aideMsg.textContent = 'La catégorie 3 n\'est pas applicable à cet usage (Décret n°2026-16, Chap. V).';
+    aideMsg.style.display = 'block';
+  } else {
+    aideMsg.style.display = 'none';
+  }
+}
+
+document.getElementById('climatise').addEventListener('change', mettreAJourContrainteCategorie);
+/* Mise à jour aussi lors du changement d'usage */
+document.getElementById('usage').addEventListener('change', mettreAJourContrainteCategorie);
+/* Initialisation au chargement */
+mettreAJourContrainteCategorie();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WIZARD — AIDE À LA DÉTERMINATION DE LA CATÉGORIE CE
+   Arbre de décision : Chap. V, § Catégorie CE d'un local
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Coche un radio du wizard par name + value */
+function wzPrecocher(name, value) {
+  var radio = document.querySelector('input[name="' + name + '"][value="' + value + '"]');
+  if (radio) radio.checked = true;
+}
+
+/* Réinitialise et pré-remplit le wizard depuis les champs du formulaire */
+function wzReset() {
+  /* 1. Masquer les étapes conditionnelles et effacer le résultat */
+  ['wz-q2','wz-q3-igh','wz-q3-bruit','wz-q4'].forEach(function(id) {
+    document.getElementById(id).style.display = 'none';
+  });
+  ['wz-clim','wz-bureaux','wz-igh','wz-bruit','wz-zone-chaude'].forEach(function(name) {
+    document.querySelectorAll('input[name="' + name + '"]').forEach(function(r) { r.checked = false; });
+  });
+  var res = document.getElementById('wz-result');
+  var btn = document.getElementById('wz-appliquer');
+  res.style.display = 'none';
+  res.className = 'wz-result';
+  btn.style.display = 'none';
+
+  /* 2. Lire les valeurs actuelles du formulaire */
+  var climatise = document.getElementById('climatise').checked;
+  var usage     = parseInt(document.getElementById('usage').value) || 0;
+  var zone      = document.getElementById('zone').value;
+  var altitude  = document.getElementById('altitude').value;
+  var bruit     = document.getElementById('bruit').checked;
+  var igh       = document.getElementById('igh').checked;
+
+  /* Q1 : climatisation — toujours connu (case cochée ou non) */
+  wzPrecocher('wz-clim', climatise ? 'oui' : 'non');
+
+  /* Q2 : usage éligible CE3 — pré-rempli si usage déjà sélectionné dans le formulaire
+     Oui = dans USAGES_CE3, Non = usage connu mais hors liste, vide = usage non encore saisi */
+  if (usage > 0) {
+    wzPrecocher('wz-bureaux', USAGES_CE3.has(usage) ? 'oui' : 'non');
+  }
+
+  /* Q3-IGH : pré-rempli à "Oui" si la case IGH est cochée
+     (on ne pré-remplit pas "Non" car les baies non ouvrantes sont une autre condition) */
+  if (igh) {
+    wzPrecocher('wz-igh', 'oui');
+  }
+
+  /* Q3-bruit : pré-rempli depuis la case "exposition bruit" du formulaire */
+  wzPrecocher('wz-bruit', bruit ? 'oui' : 'non');
+
+  /* Q4 : zone chaude — pré-rempli si zone climatique déjà saisie */
+  if (zone) {
+    var estZoneChaude = (zone === 'H2d' || zone === 'H3') && altitude === 'inf400';
+    wzPrecocher('wz-zone-chaude', estZoneChaude ? 'oui' : 'non');
+  }
+
+  /* 3. Propager les pré-remplissages dans l'arbre */
+  wzCalculer();
+}
+
+/* Affiche le résultat du wizard */
+function wzShowResult(cat) {
+  var el  = document.getElementById('wz-result');
+  var btn = document.getElementById('wz-appliquer');
+  var labels = { cat1: 'Catégorie 1', cat2: 'Catégorie 2', cat3: 'Catégorie 3' };
+  var descs  = {
+    cat1: 'Usage courant — pas de contraintes extérieures spécifiques',
+    cat2: 'Contraintes particulières — zone chaude H2d/H3 + altitude < 400 m + bruit BR2/BR3',
+    cat3: 'Très fortes contraintes — bureaux avec baies non ouvrantes ou IGH',
+  };
+  el.className = 'wz-result ' + cat;
+  el.textContent = '→ ' + labels[cat] + ' — ' + descs[cat];
+  el.style.display = 'block';
+  btn.dataset.cat  = cat;
+  btn.style.display = 'inline-block';
+}
+
+/* Calcule la catégorie à partir des réponses du wizard */
+function wzCalculer() {
+  /* Masquer résultat en attente */
+  document.getElementById('wz-result').style.display = 'none';
+  document.getElementById('wz-appliquer').style.display = 'none';
+
+  /* Q1 : climatisé ? */
+  var climVal = document.querySelector('input[name="wz-clim"]:checked');
+  if (!climVal) return;
+
+  if (climVal.value === 'non') {
+    /* Non climatisé → CE1 obligatoire */
+    wzShowResult('cat1');
+    return;
+  }
+
+  /* Climatisé → Q2 : bureaux ? */
+  document.getElementById('wz-q2').style.display = 'flex';
+  var bureaux = document.querySelector('input[name="wz-bureaux"]:checked');
+  if (!bureaux) return;
+
+  if (bureaux.value === 'oui') {
+    /* Bureaux → Q3 IGH / ouverture interdite */
+    document.getElementById('wz-q3-igh').style.display = 'flex';
+    document.getElementById('wz-q3-bruit').style.display = 'none';
+    var igh = document.querySelector('input[name="wz-igh"]:checked');
+    if (!igh) return;
+    if (igh.value === 'oui') {
+      wzShowResult('cat3');
+      return;
+    }
+    /* Bureaux + non IGH/ouverture → passer à la question bruit */
+  } else {
+    /* Pas bureaux → masquer Q3-IGH si visible */
+    document.getElementById('wz-q3-igh').style.display = 'none';
+  }
+
+  /* Q3 bruit : baies BR2 ou BR3 ? */
+  document.getElementById('wz-q3-bruit').style.display = 'flex';
+  var bruit = document.querySelector('input[name="wz-bruit"]:checked');
+  if (!bruit) return;
+
+  if (bruit.value === 'non') {
+    wzShowResult('cat1');
+    return;
+  }
+
+  /* Bruit BR2/BR3 → Q4 : zone H2d/H3 + altitude < 400 m ? */
+  document.getElementById('wz-q4').style.display = 'flex';
+  var zoneChaude = document.querySelector('input[name="wz-zone-chaude"]:checked');
+  if (!zoneChaude) return;
+
+  wzShowResult(zoneChaude.value === 'oui' ? 'cat2' : 'cat1');
+}
+
+/* Écouter tous les radios du wizard */
+document.querySelectorAll('.wizard-cat input[type="radio"]').forEach(function(radio) {
+  radio.addEventListener('change', wzCalculer);
+});
+
+/* Réinitialiser le wizard à chaque ouverture */
+document.getElementById('wizard-cat').addEventListener('toggle', function() {
+  if (this.open) wzReset();
+});
+
+/* Appliquer la catégorie calculée et synchroniser le formulaire principal */
+document.getElementById('wz-appliquer').addEventListener('click', function() {
+  var cat = this.dataset.cat;
+  if (!cat) return;
+
+  /* Toujours synchroniser "climatisé" depuis la réponse Q1 du wizard
+     (l'utilisateur peut avoir changé sa réponse par rapport à la case du formulaire) */
+  var climReponse = document.querySelector('input[name="wz-clim"]:checked');
+  if (climReponse) {
+    document.getElementById('climatise').checked = (climReponse.value === 'oui');
+  }
+
+  /* Synchroniser "IGH" si Q3-IGH était visible et répondue */
+  var q3igh = document.getElementById('wz-q3-igh');
+  if (q3igh.style.display !== 'none') {
+    var ighReponse = document.querySelector('input[name="wz-igh"]:checked');
+    if (ighReponse) {
+      document.getElementById('igh').checked = (ighReponse.value === 'oui');
+    }
+  }
+
+  /* Synchroniser "exposition bruit" si Q3-bruit était visible et répondue */
+  var q3bruit = document.getElementById('wz-q3-bruit');
+  if (q3bruit.style.display !== 'none') {
+    var bruitReponse = document.querySelector('input[name="wz-bruit"]:checked');
+    if (bruitReponse) {
+      document.getElementById('bruit').checked = (bruitReponse.value === 'oui');
+    }
+  }
+
+  /* Appliquer la catégorie et mettre à jour les contraintes du formulaire */
+  document.getElementById('categorie').value = cat;
+  mettreAJourContrainteCategorie();
+  document.getElementById('wizard-cat').open = false;
+});
+</script>
+
+</body>
+</html>
