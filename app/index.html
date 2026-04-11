@@ -4,339 +4,374 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculateur RE2020 — Seuils réglementaires</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* === Variables CSS === */
+    /* === Variables === */
     :root {
-      --bleu:     #1a5276;
-      --bleu-vif: #2e86c1;
-      --fond:     #f0f2f5;
-      --carte:    #ffffff;
-      --texte:    #2c3e50;
-      --discret:  #5d6d7e;
-      --bordure:  #d5d8dc;
-      --ombre:    0 1px 3px rgba(0,0,0,.09);
-      --danger:   #c0392b;
-      --avert:    #d35400;
+      --primary:       #1B4F9B;
+      --primary-dark:  #154090;
+      --primary-mid:   #2563EB;
+      --primary-light: #EBF2FF;
+      --success:       #0E9F6E;
+      --danger:        #E53E3E;
+      --danger-bg:     #FEF2F2;
+      --warning:       #D97706;
+      --violet:        #7C3AED;
+      --orange:        #EA7B1E;
+      --fond:          #F7F8FA;
+      --carte:         #FFFFFF;
+      --texte:         #111827;
+      --texte-2:       #374151;
+      --discret:       #6B7280;
+      --bordure:       #E5E7EB;
+      --ombre:         0 2px 12px rgba(0,0,0,0.07);
+      --ombre-md:      0 4px 20px rgba(0,0,0,0.10);
+      --r-sm:          6px;
+      --r:             12px;
+      /* Aliases de compatibilité pour le JS inline existant */
+      --bleu:     #1B4F9B;
+      --bleu-vif: #2563EB;
+      --avert:    #D97706;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font: 14px/1.5 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--fond);
-      color: var(--texte);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 14px; line-height: 1.6;
+      background: var(--fond); color: var(--texte);
+      -webkit-font-smoothing: antialiased;
     }
 
     /* === En-tête === */
     .entete {
-      background: var(--bleu);
-      padding: 16px 24px;
-      border-bottom: 3px solid #154360;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      padding: 18px 28px;
+      display: flex; align-items: center; gap: 14px;
     }
-    .entete h1 { color: #fff; font-size: 19px; font-weight: 600; }
-    .entete p  { color: rgba(255,255,255,.75); font-size: 12px; margin-top: 2px; }
+    .entete-logo { flex-shrink: 0; }
+    .entete h1 { color: #fff; font-size: 20px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.2; }
+    .entete p  { color: rgba(255,255,255,0.70); font-size: 12px; margin-top: 2px; font-weight: 400; }
 
     /* === Conteneur principal === */
-    .conteneur { max-width: 860px; margin: 0 auto; padding: 18px 14px 52px; }
+    .conteneur { max-width: 880px; margin: 0 auto; padding: 24px 16px 60px; }
 
-    /* === Sections collapsibles (<details>) === */
+    /* === Sections accordion (<details>) === */
     details {
       background: var(--carte);
       border: 1px solid var(--bordure);
-      border-radius: 4px;
-      margin-bottom: 10px;
+      border-radius: var(--r);
+      margin-bottom: 12px;
       box-shadow: var(--ombre);
+      overflow: hidden;
+      transition: box-shadow .2s;
     }
+    details[open] { box-shadow: var(--ombre-md); }
     details[open] > summary { border-bottom: 1px solid var(--bordure); }
     summary {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; cursor: pointer; user-select: none;
-      list-style: none;
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px; cursor: pointer; user-select: none;
+      list-style: none; transition: background .12s;
     }
     summary::-webkit-details-marker { display: none; }
+    summary:hover { background: #FAFBFC; }
+
     .chevron {
-      margin-left: auto; color: var(--discret); font-size: 11px;
-      transition: transform .15s;
+      margin-left: auto; color: var(--discret); font-size: 12px;
+      transition: transform .2s cubic-bezier(.4,0,.2,1); flex-shrink: 0;
     }
     details[open] .chevron { transform: rotate(180deg); }
 
     .num-sec {
-      width: 21px; height: 21px; border-radius: 50%;
-      background: var(--bleu); color: #fff;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--primary); color: #fff;
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 11px; font-weight: 700; flex-shrink: 0;
     }
-    summary h2 { font-size: 13px; font-weight: 600; color: var(--bleu); }
+    summary h2 { font-size: 13px; font-weight: 600; color: var(--texte); letter-spacing: -0.1px; }
 
-    /* === Corps de section (grille 2 colonnes) === */
+    /* === Corps de section === */
     .corps {
-      padding: 14px 16px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px 20px;
+      padding: 20px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px 24px;
     }
     .span2 { grid-column: 1 / -1; }
 
     /* === Champ générique === */
-    .champ { display: flex; flex-direction: column; gap: 3px; }
+    .champ { display: flex; flex-direction: column; gap: 5px; }
 
     label.lib {
       font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: .5px; color: var(--discret);
+      letter-spacing: 0.6px; color: var(--discret);
     }
-    .req { color: var(--danger); }
+    .req { color: var(--danger); margin-left: 2px; }
 
-    input[type=text],
-    input[type=number],
+    input[type=text], input[type=number], select {
+      width: 100%; padding: 0 12px; height: 42px;
+      border: 1.5px solid var(--bordure); border-radius: var(--r-sm);
+      font: 14px/1 'Inter', sans-serif; color: var(--texte); background: #fff;
+      transition: border-color .15s, box-shadow .15s;
+      -webkit-appearance: none; appearance: none;
+    }
     select {
-      width: 100%; padding: 7px 9px;
-      border: 1px solid var(--bordure); border-radius: 3px;
-      font: 13px/1.4 inherit; color: var(--texte); background: #fff;
-      transition: border-color .12s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px;
     }
     input:focus, select:focus {
-      outline: none; border-color: var(--bleu-vif);
-      box-shadow: 0 0 0 2px rgba(46,134,193,.15);
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(27,79,155,.12);
     }
+    input::placeholder { color: #9CA3AF; }
 
-    /* Case à cocher */
-    .cb {
-      display: flex; align-items: center; gap: 7px;
-      padding: 5px 0; cursor: pointer;
+    /* Custom checkbox */
+    .cb { display: flex; align-items: center; gap: 10px; padding: 4px 0; cursor: pointer; }
+    .cb input[type=checkbox] {
+      width: 18px; height: 18px; min-width: 18px;
+      border: 1.5px solid var(--bordure); border-radius: 5px;
+      cursor: pointer; padding: 0; accent-color: var(--primary); transition: border-color .15s;
     }
-    .cb input { accent-color: var(--bleu); cursor: pointer; width: 14px; height: 14px; }
-    .cb span  { font-size: 13px; cursor: pointer; }
+    .cb:hover input[type=checkbox] { border-color: var(--primary); }
+    .cb span { font-size: 13px; cursor: pointer; color: var(--texte-2); line-height: 1.4; }
 
-    /* Texte d'aide sous champ */
-    .aide { font-size: 11px; color: var(--discret); margin-top: 1px; }
-    .aide.avert { color: var(--avert); }
+    /* Texte d'aide */
+    .aide { font-size: 11.5px; color: var(--discret); line-height: 1.4; }
+    .aide.avert { color: var(--warning); font-weight: 500; }
 
     /* Badge période */
     .badge {
-      display: inline-block; padding: 2px 9px;
-      background: #d6eaf8; color: var(--bleu);
-      border-radius: 10px; font-size: 11px; font-weight: 600;
-      margin-top: 4px;
+      display: inline-block; padding: 3px 10px;
+      background: var(--primary-light); color: var(--primary);
+      border-radius: 20px; font-size: 11px; font-weight: 600; margin-top: 4px;
     }
-    .badge.gris { background: #eaecee; color: var(--discret); }
+    .badge.gris { background: #F3F4F6; color: var(--discret); }
 
-    /* === Boutons calcul / RAZ / Imprimer === */
-    .btn-wrap { text-align: center; margin: 16px 0 4px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    /* === Boutons === */
+    .btn-wrap { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 20px 0 6px; }
     .btn-calc {
-      padding: 11px 44px; background: var(--bleu); color: #fff;
-      border: none; border-radius: 4px; font: 600 14px inherit;
-      cursor: pointer; letter-spacing: .3px; transition: background .15s;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 48px; background: var(--primary); color: #fff;
+      border: none; border-radius: var(--r-sm);
+      font: 600 15px 'Inter', sans-serif;
+      cursor: pointer; letter-spacing: -0.1px;
+      transition: background .15s, transform .1s, box-shadow .15s;
+      box-shadow: 0 2px 8px rgba(27,79,155,.30);
     }
-    .btn-calc:hover { background: #154360; }
+    .btn-calc:hover { background: var(--primary-dark); box-shadow: 0 4px 14px rgba(27,79,155,.40); transform: translateY(-1px); }
+    .btn-calc:active { transform: translateY(0); }
+    .btn-calc:disabled { background: #9CA3AF; box-shadow: none; transform: none; cursor: not-allowed; }
     .btn-raz {
-      padding: 11px 24px; background: #fff; color: var(--discret);
-      border: 1px solid var(--bordure); border-radius: 4px; font: 600 14px inherit;
-      cursor: pointer; transition: background .15s;
+      padding: 14px 24px; background: #fff; color: var(--discret);
+      border: 1.5px solid var(--bordure); border-radius: var(--r-sm);
+      font: 500 14px 'Inter', sans-serif; cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
     }
-    .btn-raz:hover { background: #f0f2f5; color: var(--texte); }
+    .btn-raz:hover { background: #F9FAFB; border-color: #9CA3AF; color: var(--texte); }
     .btn-impr {
-      padding: 7px 18px; background: #fff; color: var(--bleu-vif);
-      border: 1px solid var(--bleu-vif); border-radius: 4px; font: 600 13px inherit;
-      cursor: pointer; transition: background .15s;
+      padding: 8px 18px; background: #fff; color: var(--primary);
+      border: 1.5px solid var(--primary); border-radius: var(--r-sm);
+      font: 600 12px 'Inter', sans-serif; cursor: pointer; transition: background .15s;
     }
-    .btn-impr:hover { background: #eaf4fb; }
+    .btn-impr:hover { background: var(--primary-light); }
 
     /* === Impression === */
     @media print {
-      body { background: #fff; font-size: 12px; }
+      body { background: #fff; font-size: 12px; font-family: Arial, sans-serif; }
       header, footer, .section-saisie, .btn-wrap, .bloc-err,
       .debug-lbl, #debug-json, .btn-impr { display: none !important; }
       #zone-res { display: block !important; }
-      .res-entete { border-bottom: 2px solid #1a5276; margin-bottom: 12px; }
+      .res-entete { border-bottom: 2px solid #1B4F9B; margin-bottom: 12px; }
       .grille { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-      .carte { break-inside: avoid; border: 1px solid #d5d8dc; padding: 10px; }
+      .carte { break-inside: avoid; border: 1px solid #E5E7EB; padding: 10px; border-radius: 0; }
       .c-mods { display: block !important; font-size: 10px; }
       #recapitulatif-params { display: block !important; margin-bottom: 16px;
-        border: 1px solid #d5d8dc; padding: 10px; border-radius: 4px; font-size: 11px; }
+        border: 1px solid #E5E7EB; padding: 10px; border-radius: 4px; font-size: 11px; }
     }
     #recapitulatif-params { display: none; }
 
-    /* === Bloc erreurs validation === */
+    /* === Bloc erreurs === */
     .bloc-err {
-      background: #fdedec; border: 1px solid #f5b7b1;
-      border-radius: 4px; padding: 10px 14px; margin-bottom: 12px;
-      font-size: 12px; color: var(--danger);
+      background: var(--danger-bg); border: 1px solid #FECACA;
+      border-radius: var(--r-sm); padding: 12px 16px; margin-bottom: 14px;
+      font-size: 13px; color: var(--danger); font-weight: 500;
     }
-    .bloc-err ul { margin-top: 4px; padding-left: 16px; }
+    .bloc-err ul { margin-top: 6px; padding-left: 18px; }
+    .bloc-err li { margin-top: 3px; font-weight: 400; }
 
     /* === Zone résultats === */
     .res-entete {
       display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+      flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
     }
-    .res-titre { font-size: 14px; font-weight: 600; color: var(--bleu); }
-    .badges-periodes { display: flex; gap: 6px; flex-wrap: wrap; }
+    .res-titre { font-size: 15px; font-weight: 700; color: var(--texte); letter-spacing: -0.2px; }
+    .badges-periodes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
-    /* Grille 3 × 2 cartes */
+    /* === Grille résultats === */
     .grille {
       display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 10px; margin-bottom: 12px;
+      gap: 14px; margin-bottom: 16px;
     }
 
+    /* Carte de base */
     .carte {
       background: var(--carte); border: 1px solid var(--bordure);
-      border-top: 3px solid var(--bleu); border-radius: 4px;
-      padding: 12px 13px; box-shadow: var(--ombre);
+      border-top: 4px solid var(--primary); border-radius: var(--r);
+      padding: 18px 16px 14px; box-shadow: var(--ombre);
+      transition: box-shadow .2s, transform .15s;
     }
-    .carte.na  { border-top-color: #aab7b8; }
+    .carte:hover { box-shadow: var(--ombre-md); transform: translateY(-1px); }
+
+    /* Bandeau couleur par indicateur */
+    #carte-bbiomax           { border-top-color: var(--primary); }
+    #carte-cepnrmax          { border-top-color: var(--primary); }
+    #carte-cepmax            { border-top-color: var(--primary-mid); }
+    #carte-icenergiemax      { border-top-color: var(--success); }
+    #carte-icconstructionmax { border-top-color: var(--violet); }
+    #carte-dhmax             { border-top-color: var(--orange); }
+
+    .carte.na  { border-top-color: var(--bordure); opacity: .75; }
     .carte.err { border-top-color: var(--danger); }
 
+    .c-desc {
+      font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.7px; color: var(--discret); margin-bottom: 4px;
+    }
     .c-lib {
-      font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .5px; color: var(--discret); margin-bottom: 4px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--texte-2); margin-bottom: 6px;
     }
     .c-val {
-      font-size: 23px; font-weight: 700; color: var(--bleu); line-height: 1.2;
+      font-size: 36px; font-weight: 800; color: var(--primary);
+      line-height: 1.1; letter-spacing: -1.5px;
     }
-    .c-val.na { font-size: 13px; color: var(--discret); font-weight: 400; }
-    .c-unite  { font-size: 10px; color: var(--discret); margin-top: 1px; }
+    .c-val.na { font-size: 14px; color: var(--discret); font-weight: 500; letter-spacing: 0; }
+    .c-unite  { font-size: 11px; color: var(--discret); margin-top: 3px; font-weight: 500; }
 
-    /* Label descriptif au-dessus du nom de l'indicateur */
-    .c-desc {
-      font-size: 9px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .5px; color: var(--bleu-vif); margin-bottom: 5px;
-    }
+    /* Couleur valeur par indicateur */
+    #carte-icenergiemax .c-val      { color: var(--success); }
+    #carte-icconstructionmax .c-val { color: var(--violet); }
+    #carte-dhmax .c-val             { color: var(--orange); }
 
-    /* Zone formule / coefficients */
+    /* Zone formule */
     .c-mods {
-      margin-top: 8px; padding-top: 8px;
-      border-top: 1px solid var(--bordure);
+      margin-top: 12px; padding: 10px;
+      background: #F9FAFB; border-radius: var(--r-sm);
       font-size: 10px; color: var(--discret);
     }
-
-    /* Ligne d'expression compacte : base × (1 + Σmod) */
     .cf-expr {
-      font: 10px/1.4 'Consolas', monospace;
-      color: var(--discret); margin-bottom: 5px;
-      word-break: break-all;
+      font: 10px/1.5 'Consolas', 'SF Mono', monospace;
+      color: var(--discret); margin-bottom: 6px; word-break: break-all;
+      background: #F3F4F6; padding: 4px 6px; border-radius: 4px;
     }
-
-    /* Grille de termes étiquetés */
-    .cf-grille { display: flex; flex-wrap: wrap; gap: 4px 10px; }
-    .cf-term   { display: flex; flex-direction: column; align-items: center; min-width: 30px; }
-    .cf-lbl    { font-size: 8px; color: var(--discret); text-align: center; white-space: nowrap; }
-    .cf-val    { font-size: 10px; font-weight: 600; color: var(--texte); }
-    .cf-val.actif { color: var(--bleu-vif); }
-
-    /* Séparateur entre parties multiplicative et additive (Icconstruction) */
+    .cf-grille { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+    .cf-term   { display: flex; flex-direction: column; align-items: center; min-width: 32px; }
+    .cf-lbl    { font-size: 8px; color: var(--discret); text-align: center; white-space: nowrap; letter-spacing: 0.3px; }
+    .cf-val    { font-size: 10px; font-weight: 600; color: var(--texte-2); }
+    .cf-val.actif { color: var(--primary); }
     .cf-sep {
-      width: 100%; height: 1px; background: var(--bordure); margin: 4px 0;
-      font-size: 8px; color: var(--discret); text-align: left; padding-top: 1px;
+      width: 100%; height: 1px; background: var(--bordure); margin: 6px 0 4px;
+      font-size: 8px; color: var(--discret); text-align: left; padding-top: 2px;
     }
     .cf-note { font-size: 9px; color: var(--discret); font-style: italic; margin-top: 4px; }
 
     /* === Debug === */
     .debug-lbl {
       display: inline-flex; align-items: center; gap: 6px;
-      font-size: 11px; color: var(--discret); cursor: pointer;
-      margin-bottom: 8px;
+      font-size: 11px; color: var(--discret); cursor: pointer; margin-bottom: 10px; padding: 4px 0;
     }
+    .debug-lbl input { accent-color: var(--primary); }
     pre.debug {
-      background: #1a2332; color: #a8c8e8;
-      border-radius: 4px; padding: 12px 14px;
-      font: 11px/1.5 'Consolas', monospace;
-      overflow-x: auto; white-space: pre-wrap; margin-bottom: 10px;
+      background: #1E293B; color: #94A3B8;
+      border-radius: var(--r-sm); padding: 14px 16px;
+      font: 11px/1.6 'Consolas', monospace;
+      overflow-x: auto; white-space: pre-wrap; margin-bottom: 12px;
     }
 
     /* === Wizard catégorie CE === */
     .wizard-cat {
-      grid-column: 1 / -1;
-      background: #f0f7ff;
-      border: 1px solid #aed6f1;
-      border-radius: 4px;
-      margin-top: -4px;
+      grid-column: 1 / -1; background: #EFF6FF;
+      border: 1px solid #BFDBFE; border-radius: var(--r-sm);
+      margin-top: -4px; overflow: hidden;
     }
     .wizard-cat > summary {
-      padding: 7px 12px;
-      font-size: 11px; font-weight: 600; color: var(--bleu-vif);
+      padding: 9px 14px; font-size: 12px; font-weight: 600; color: var(--primary);
       cursor: pointer; user-select: none; list-style: none;
-      display: flex; align-items: center; gap: 6px;
+      display: flex; align-items: center; gap: 6px; transition: background .12s;
     }
     .wizard-cat > summary::-webkit-details-marker { display: none; }
-    .wizard-cat[open] > summary { border-bottom: 1px solid #aed6f1; }
-    .corps-wizard {
-      padding: 12px 14px;
-      display: flex; flex-direction: column; gap: 10px;
-    }
-    .wz-etape { display: flex; flex-direction: column; gap: 4px; }
-    .wizard-q {
-      font-size: 12px; font-weight: 600; color: var(--texte);
-    }
-    .wizard-radios { display: flex; gap: 14px; }
+    .wizard-cat[open] > summary { border-bottom: 1px solid #BFDBFE; }
+    .wizard-cat > summary:hover { background: #DBEAFE; }
+    .corps-wizard { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .wz-etape { display: flex; flex-direction: column; gap: 6px; }
+    .wizard-q { font-size: 12.5px; font-weight: 600; color: var(--texte); }
+    .wizard-radios { display: flex; gap: 16px; }
     .wizard-radios label {
-      display: flex; align-items: center; gap: 5px;
-      font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; cursor: pointer; color: var(--texte-2);
     }
-    .wizard-radios input { accent-color: var(--bleu-vif); cursor: pointer; }
-    .wz-result {
-      border-radius: 3px; padding: 7px 10px;
-      font-size: 12px; font-weight: 600; display: none;
-    }
-    .wz-result.cat1 { background: #d5e8d4; border: 1px solid #82b366; color: #3d6b36; }
-    .wz-result.cat2 { background: #fff2cc; border: 1px solid #d6b656; color: #7a5c00; }
-    .wz-result.cat3 { background: #f8cecc; border: 1px solid #b85450; color: #7a2020; }
+    .wizard-radios input { accent-color: var(--primary); cursor: pointer; }
+    .wz-result { border-radius: var(--r-sm); padding: 9px 12px; font-size: 13px; font-weight: 600; display: none; }
+    .wz-result.cat1 { background: #D1FAE5; border: 1px solid #6EE7B7; color: #065F46; }
+    .wz-result.cat2 { background: #FEF3C7; border: 1px solid #FCD34D; color: #92400E; }
+    .wz-result.cat3 { background: #FEE2E2; border: 1px solid #FCA5A5; color: #991B1B; }
     .wz-btn {
-      padding: 5px 14px; background: var(--bleu-vif); color: #fff;
-      border: none; border-radius: 3px; font: 600 11px inherit;
-      cursor: pointer; display: none; align-self: flex-start;
-      margin-top: 2px;
+      padding: 7px 16px; background: var(--primary); color: #fff;
+      border: none; border-radius: var(--r-sm);
+      font: 600 12px 'Inter', sans-serif; cursor: pointer;
+      display: none; align-self: flex-start; margin-top: 2px; transition: background .15s;
     }
-    .wz-btn:hover { background: var(--bleu); }
+    .wz-btn:hover { background: var(--primary-dark); }
 
     /* === Pied de page === */
     footer {
-      font-size: 11px; color: var(--discret); text-align: center;
+      font-size: 11.5px; color: var(--discret); text-align: center;
       border-top: 1px solid var(--bordure);
-      padding-top: 14px; margin-top: 20px; line-height: 1.6;
+      padding-top: 16px; margin-top: 24px; line-height: 1.7;
     }
 
-    /* === Responsive === */
-    @media (max-width: 620px) {
-      .corps { grid-template-columns: 1fr; }
+    /* === Responsive tablette === */
+    @media (max-width: 720px) {
       .grille { grid-template-columns: 1fr 1fr; }
     }
 
-    @media (max-width: 480px) {
-      /* Cartes résultats en colonne unique sous 480 px */
-      .grille { grid-template-columns: 1fr; }
-
-      /* Agrandir légèrement les textes de formule */
-      .c-lib    { font-size: 11px; }
-      .c-val    { font-size: 20px; }
-      .c-unite  { font-size: 11px; }
-      .cf-expr  { font-size: 11px; }
-      .cf-lbl   { font-size: 9px; white-space: normal; text-align: center; }
-      .cf-val   { font-size: 11px; }
-      .cf-note  { font-size: 10px; }
-
-      /* Formule scrollable horizontalement plutôt que word-break brutal */
-      .cf-expr  { overflow-x: auto; white-space: pre; word-break: normal; }
-
-      /* Espacements carte */
-      .carte { padding: 12px 14px; }
-      .c-mods { font-size: 11px; }
-
-      /* Formules masquées par défaut sur mobile */
-      .c-mods { display: none; }
-
-      /* Bloc JSON debug inutile sur mobile */
-      #debug-json { display: none !important; }
+    /* === Responsive mobile === */
+    @media (max-width: 640px) {
+      .conteneur { padding: 16px 12px 48px; }
+      .corps { grid-template-columns: 1fr; padding: 16px; gap: 14px; }
+      .btn-calc { padding: 14px 32px; width: 100%; justify-content: center; }
+      .btn-wrap { flex-direction: column; }
+      .btn-raz  { width: 100%; text-align: center; }
     }
 
-    /* Formules visibles quand l'utilisateur active le toggle */
+    @media (max-width: 480px) {
+      .grille { grid-template-columns: 1fr; }
+      .c-val  { font-size: 28px; }
+      .c-mods { display: none; }
+      #debug-json { display: none !important; }
+      .cf-expr { overflow-x: auto; white-space: pre; word-break: normal; font-size: 11px; }
+      .cf-lbl  { font-size: 9px; white-space: normal; }
+      .cf-val  { font-size: 11px; }
+    }
+
+    /* Formules visibles quand toggle actif */
     body.details-visibles .c-mods { display: block; }
   </style>
 </head>
 <body>
 
 <header class="entete">
-  <h1>Calculateur RE2020</h1>
-  <p>Seuils réglementaires — Annexe à l'article R.172-4</p>
+  <div class="entete-logo">
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="40" height="40" rx="10" fill="rgba(255,255,255,0.15)"/>
+      <text x="20" y="27" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="15" fill="white" letter-spacing="-0.5">RE</text>
+    </svg>
+  </div>
+  <div>
+    <h1>Calculateur RE2020</h1>
+    <p>Seuils réglementaires — Annexe à l'article R.172-4</p>
+  </div>
 </header>
 
 <div class="conteneur">
@@ -644,7 +679,7 @@
 
   <!-- Boutons calcul + RAZ -->
   <div class="btn-wrap">
-    <button class="btn-calc" id="btn-calculer">Calculer les seuils RE2020</button>
+    <button class="btn-calc" id="btn-calculer"><span aria-hidden="true">▶</span> Calculer les seuils RE2020</button>
     <button class="btn-raz"  id="btn-raz">Remettre à zéro</button>
   </div>
 
