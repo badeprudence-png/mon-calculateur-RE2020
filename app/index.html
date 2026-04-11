@@ -320,7 +320,13 @@
       /* Espacements carte */
       .carte { padding: 12px 14px; }
       .c-mods { font-size: 11px; }
+
+      /* Formules masquées par défaut sur mobile */
+      .c-mods { display: none; }
     }
+
+    /* Formules visibles quand l'utilisateur active le toggle */
+    body.details-visibles .c-mods { display: block; }
   </style>
 </head>
 <body>
@@ -1427,6 +1433,7 @@ document.getElementById('btn-calculer').addEventListener('click', async function
 /* Toggle détails de calcul */
 document.getElementById('toggle-debug').addEventListener('change', function() {
   document.getElementById('debug-json').style.display = this.checked ? 'block' : 'none';
+  document.body.classList.toggle('details-visibles', this.checked);
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
