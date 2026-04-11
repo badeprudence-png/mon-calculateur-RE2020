@@ -300,8 +300,26 @@
       .corps { grid-template-columns: 1fr; }
       .grille { grid-template-columns: 1fr 1fr; }
     }
-    @media (max-width: 400px) {
+
+    @media (max-width: 480px) {
+      /* Cartes résultats en colonne unique sous 480 px */
       .grille { grid-template-columns: 1fr; }
+
+      /* Agrandir légèrement les textes de formule */
+      .c-lib    { font-size: 11px; }
+      .c-val    { font-size: 20px; }
+      .c-unite  { font-size: 11px; }
+      .cf-expr  { font-size: 11px; }
+      .cf-lbl   { font-size: 9px; white-space: normal; text-align: center; }
+      .cf-val   { font-size: 11px; }
+      .cf-note  { font-size: 10px; }
+
+      /* Formule scrollable horizontalement plutôt que word-break brutal */
+      .cf-expr  { overflow-x: auto; white-space: pre; word-break: normal; }
+
+      /* Espacements carte */
+      .carte { padding: 12px 14px; }
+      .c-mods { font-size: 11px; }
     }
   </style>
 </head>
